@@ -56,10 +56,12 @@ const Home: NextPage = () => {
           <ConnectButton />
         </div>
       </div>
-      <div>
-        {account}
-        <Signature {...signatureExample} />
-      </div>
+      {account && (
+        <div>
+          {account}
+          <Signature {...signatureExample} />
+        </div>
+      )}
     </div>
   );
 };
