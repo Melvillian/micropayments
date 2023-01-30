@@ -2,7 +2,6 @@ import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { NextPage } from "next";
 import { useEffect, useState } from "react";
 import { useAccount } from "wagmi";
-import Profile from "./components/Profile";
 import Signature from "./components/Signature";
 
 const signatureExample = {
