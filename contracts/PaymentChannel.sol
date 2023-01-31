@@ -65,6 +65,7 @@ contract PaymentChannel {
         bytes32 r,
         bytes32 s
     ) private {
+        // TODO: make sure dangling allowances are impossible, or at least mitigated
         IERC20Permit(token).permit(owner, spender, value, deadline, v, r, s);
     }
 
@@ -99,14 +100,19 @@ contract PaymentChannel {
 
         // 6. transfer the difference between the channel balance and the micropayment amount
         //    to the recipient
-        uint256 amountToTransfer = skMsg.permitMsg.value - mpMsg.amount;
+        uint256 min = mpMsg.amount < skMsg.permitMsg.value
+            ? mpMsg.amount
+            : skMsg.permitMsg.value;
+        uint256 amountToTransfer = skMsg.permitMsg.value - min;
         IERC20(skMsg.token).transfer(skMsg.recipient, amountToTransfer);
     }
 
     /// @notice Using an array of EIP-2612 messages, withdraw the authorized amount of ERC20 token from each user's wallet
     /// @dev This system will only work for EIP-2612-compatible ERC20
     /// tokens (e.g. USDC)
-    /// @param msgs an array of structs containing data necessary to securely authorize user micropayments to the service provider
+    /// @param skMsgs array of messages authorizing the channel to pull funds from the user's wallet
+    /// into the channel
+    /// @param mpMsgs array of messages that authorizes the channel to transfer funds to the recipient
     function settleChannels(
         SigningKeyMessage[] calldata skMsgs,
         MicropaymentMessage[] calldata mpMsgs
@@ -117,9 +123,10 @@ contract PaymentChannel {
         }
     }
 
-    function validateSigningKeyMessage(
-        SigningKeyMessage calldata skMsg
-    ) private view {
+    function validateSigningKeyMessage(SigningKeyMessage calldata skMsg)
+        private
+        view
+    {
         bytes32 digest = keccak256(
             abi.encodePacked(
                 "\x19\x01",
