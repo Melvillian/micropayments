@@ -1,4 +1,4 @@
-import { time, loadFixture } from "@nomicfoundation/hardhat-network-helpers";
+import { loadFixture } from "@nomicfoundation/hardhat-network-helpers";
 import { expect } from "chai";
 import { ethers } from "hardhat";
 
@@ -15,7 +15,10 @@ describe("PaymentChannel", function () {
     return { paymentChannel, deployer, alice, bob };
   }
 
-  describe("Channel Setup", async () => {
-    const { bob } = await loadFixture(deployFixture);
+  describe("Channel Setup", () => {
+    it("stub test", async () => {
+      const { bob } = await loadFixture(deployFixture);
+      console.log(bob);
+    });
   });
 });
