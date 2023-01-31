@@ -3,13 +3,18 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import { prisma } from "utils/prisma";
 
 const createSignature = async (req: NextApiRequest, res: NextApiResponse) => {
+  const body = req.body;
   const signature = await prisma.signature.create({
     data: {
-      walletAddress: "0xAb5801a7D398351b8bE11C439e05C5B3259aeC9B",
+      walletAddress: body.from,
       signature: {
-        types: [],
-        domains: [],
-        values: [],
+        name: body.name,
+        types: body.types,
+        chain: body.chain,
+        domain: body.domain,
+        values: body.value,
+        primaryType: body.primaryType,
+        data: body.data,
       },
     },
   });

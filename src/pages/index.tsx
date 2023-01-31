@@ -25,7 +25,7 @@ const signatureExample = {
     verifyingContract: "0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC",
   },
   primaryType: "Example",
-  message: {
+  value: {
     from: {
       name: "Cow",
       wallet: "0xCD2a3d9F938E13CD947Ec05AbC7FE734Df8DD826",
@@ -48,7 +48,7 @@ const Home: NextPage = () => {
     }
   }, [isConnected]);
 
-  const sendChatMessage = async (e) => {
+  const sendChatMessage = async (e: any) => {
     e.preventDefault();
     const { message } = e.target;
     const endpoint = "/api/chat";
@@ -78,7 +78,7 @@ const Home: NextPage = () => {
       {account && (
         <div>
           {account}
-          <Signature {...signatureExample} />
+          <Signature {...{ address: account, ...signatureExample }} />
           <div className="p-2">
             <form onSubmit={sendChatMessage}>
               <input
