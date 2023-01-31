@@ -25,7 +25,7 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
-  if (req.method == "POST") {
+  if (req.method === "POST") {
     createSignature(req, res);
   } else if (req.method === "GET") {
     await fetchSignatures(req, res);
