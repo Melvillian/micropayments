@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test": "npx hardhat test"
+    "hardhat-test": "nodemon -x npx hardhat test --parallel -w contracts -w test -e js,ts,sol"
   },
   "dependencies": {
     "@next/font": "13.1.6",
