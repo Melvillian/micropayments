@@ -40,7 +40,6 @@ describe("PaymentChannel", function () {
       0,
       now + 1000
     );
-
   });
 
   // sign a permit
@@ -79,43 +78,43 @@ describe("PaymentChannel", function () {
   };
 
   // Sign a skMsg
-  const signSigningKeyMessage = async (
-    erc20: PermitERC20,
-    paymentChannel: PaymentChannel,
-    signer: SignerWithAddress,
-    id: BigNumber,
-    signingKey: Address,
-    recipient: Address,
-    spender: Address,
-    value: BigNumber,
-    nonce: number,
-    deadline: number,
-    permitMsg: Signature,
+  // const signSigningKeyMessage = async (
+  //   erc20: PermitERC20,
+  //   paymentChannel: PaymentChannel,
+  //   signer: SignerWithAddress,
+  //   id: BigNumber,
+  //   signingKey: Address,
+  //   recipient: Address,
+  //   spender: Address,
+  //   value: BigNumber,
+  //   nonce: number,
+  //   deadline: number,
+  //   permitMsg: Signature,
     
-  ): Promise<Signature> => {
-    const domain = {
-      name: "PermitERC20",
-      version: "1",
-      chainId: network.config.chainId,
-      verifyingContract: erc20.address,
-    };
-    const types = {
-      Permit: [
-        { name: "owner", type: "address" },
-        { name: "spender", type: "address" },
-        { name: "value", type: "uint256" },
-        { name: "nonce", type: "uint256" },
-        { name: "deadline", type: "uint256" },
-      ],
-    };
-    const values = {
-      owner: signer.address,
-      spender: spender,
-      value: value,
-      nonce: nonce,
-      deadline: deadline,
-    };
-    const signature = await signer._signTypedData(domain, types, values);
-    return ethers.utils.splitSignature(signature);
-  };
+  // ): Promise<Signature> => {
+  //   const domain = {
+  //     name: "PermitERC20",
+  //     version: "1",
+  //     chainId: network.config.chainId,
+  //     verifyingContract: erc20.address,
+  //   };
+  //   const types = {
+  //     Permit: [
+  //       { name: "owner", type: "address" },
+  //       { name: "spender", type: "address" },
+  //       { name: "value", type: "uint256" },
+  //       { name: "nonce", type: "uint256" },
+  //       { name: "deadline", type: "uint256" },
+  //     ],
+  //   };
+  //   const values = {
+  //     owner: signer.address,
+  //     spender: spender,
+  //     value: value,
+  //     nonce: nonce,
+  //     deadline: deadline,
+  //   };
+  //   const signature = await signer._signTypedData(domain, types, values);
+  //   return ethers.utils.splitSignature(signature);
+  // };
 });
