@@ -7,7 +7,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 contract PaymentChannel {
     bytes32 private constant DOMAIN_TYPEHASH =
         keccak256(
-            "EIP712Domain(string name,uint256 chainId,address verifyingContract)"
+            "EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"
         );
 
     bytes32 private constant PERMIT_TYPEHASH =
@@ -53,20 +53,6 @@ contract PaymentChannel {
         uint8 v;
         bytes32 r;
         bytes32 s;
-    }
-
-    function approveChannelFunds(
-        address token,
-        address owner,
-        address spender,
-        uint256 value,
-        uint256 deadline,
-        uint8 v,
-        bytes32 r,
-        bytes32 s
-    ) private {
-        // TODO: make sure dangling allowances are impossible, or at least mitigated
-        IERC20Permit(token).permit(owner, spender, value, deadline, v, r, s);
     }
 
     function settleChannel(
