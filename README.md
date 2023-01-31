@@ -5,8 +5,8 @@
 ### Smart Contract
 
 - [x] Implement EIP-712 signing payloads
-- [ ] Implement transfer business logic
-- [ ] Implement EIP-712 verification logic
+- [x] Implement transfer business logic
+- [x] Implement EIP-712 verification logic
 - [ ] Unit tests
 - [ ] System tests
 
