@@ -2,9 +2,14 @@ import { time, loadFixture } from "@nomicfoundation/hardhat-network-helpers";
 import { expect } from "chai";
 import { ethers, network } from "hardhat";
 import { BigNumber, Signature } from "ethers";
-import { PermitERC20 } from "../typechain/PermitERC20";
-import { PaymentChannel } from "../typechain/PaymentChannel";
+
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
+import {
+  PaymentChannel,
+  PaymentChannel__factory,
+  PermitERC20,
+  PermitERC20__factory,
+} from "typechain-types";
 
 type Address = string;
 
@@ -15,12 +20,11 @@ describe("PaymentChannel", function () {
   async function deployFixture() {
     const [deployer, alice, bob] = await ethers.getSigners();
 
-    const PaymentChannel: PaymentChannel = await ethers.getContractFactory(
-      "PaymentChannel"
-    );
+    const PaymentChannel: PaymentChannel__factory =
+      await ethers.getContractFactory("PaymentChannel");
     const paymentChannel = await PaymentChannel.deploy();
 
-    const PermitERC20: PermitERC20 = await ethers.getContractFactory(
+    const PermitERC20: PermitERC20__factory = await ethers.getContractFactory(
       "PermitERC20"
     );
     const erc20 = await PermitERC20.deploy();
@@ -29,7 +33,9 @@ describe("PaymentChannel", function () {
   }
 
   describe("Channel Setup", async () => {
-    const { paymentChannel, erc20, deployer } = await loadFixture(deployFixture);
+    const { paymentChannel, erc20, deployer } = await loadFixture(
+      deployFixture
+    );
 
     const now = await time.latest();
     const permitSig: Signature = await signPermitMessage(
@@ -90,7 +96,7 @@ describe("PaymentChannel", function () {
   //   nonce: number,
   //   deadline: number,
   //   permitMsg: Signature,
-    
+
   // ): Promise<Signature> => {
   //   const domain = {
   //     name: "PermitERC20",

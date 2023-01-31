@@ -27,10 +27,10 @@ export default async function handler(
 ) {
   if (req.method == "POST") {
     createSignature(req, res);
-    return;
   } else if (req.method === "GET") {
     await fetchSignatures(req, res);
+  } else {
+    res.status(404).json({ message: "error" });
   }
   // create signature
-  res.status(404).json({ message: "error" });
 }
