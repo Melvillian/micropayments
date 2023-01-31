@@ -18,16 +18,18 @@
 
 ### Server
 
-- [ ] setup database
+- [x] setup database
 - [ ] signing key message route
 - [ ] Micropayment message route
 - [ ] periodic batch settleChannels cron-job (could also be scheduled lambda function)`
 
 # Useful commands
 
+Getting the app working locally:
+
 ```
+docker-compose up # run local database
 yarn dev # run migrations and start app
-yarn test # test smart contracts
 ```
 
 # Hints:
