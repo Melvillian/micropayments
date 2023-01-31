@@ -48,6 +48,25 @@ const Home: NextPage = () => {
     }
   }, [isConnected]);
 
+  const sendChatMessage = async (e) => {
+    e.preventDefault();
+    const { message } = e.target;
+    const endpoint = "/api/chat";
+    const options = {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        message: message.value,
+      }),
+    };
+
+    const response = await fetch(endpoint, options);
+    const result = await response.json();
+    alert(`Your answer: ${JSON.stringify(result)}`);
+  };
+
   return (
     <div>
       <div className="flex justify-between content-center flex-row">
@@ -60,6 +79,18 @@ const Home: NextPage = () => {
         <div>
           {account}
           <Signature {...signatureExample} />
+          <div className="p-2">
+            <form onSubmit={sendChatMessage}>
+              <input
+                className="p-2"
+                placeholder="what is life?"
+                type="text"
+                id="message"
+                name="message"
+              />
+              <button type="submit">Submit</button>
+            </form>
+          </div>
         </div>
       )}
     </div>
