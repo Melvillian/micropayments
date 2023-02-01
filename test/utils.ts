@@ -1,7 +1,7 @@
 import { ethers, network } from "hardhat";
 import { BigNumber, Signature, Wallet } from "ethers";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { TestPaymentChannel, PermitERC20 } from "../typechain-types";
+import { PermitERC20, TestPaymentChannel } from "../typechain-types";
 
 type Address = string;
 
