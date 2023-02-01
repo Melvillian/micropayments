@@ -1,18 +1,13 @@
-import { time, loadFixture } from "@nomicfoundation/hardhat-network-helpers";
+import { loadFixture } from "@nomicfoundation/hardhat-network-helpers";
 import { expect } from "chai";
-import { ethers, network } from "hardhat";
+import { ethers } from "hardhat";
 import { BigNumber, Signature, Wallet } from "ethers";
 
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import {
   TestPaymentChannel,
   TestPaymentChannel__factory,
-  PermitERC20,
-  PermitERC20__factory,
 } from "../typechain-types";
-
-// for readability
-type Address = string;
+import { signPermitMessage, signSigningKeyMessage } from "./utils";
 
 const MAX_UINT256 = BigNumber.from(2).pow(256).sub(1);
 const CHANNEL_MAX_AMOUNT = ethers.utils.parseEther("0.001");
@@ -30,9 +25,7 @@ describe("PaymentChannel", function () {
       await ethers.getContractFactory("TestPaymentChannel");
     const paymentChannel: TestPaymentChannel = await PaymentChannel.deploy();
     // use this as our example USDC token that supports EIP-2612
-    const PermitERC20: PermitERC20__factory = await ethers.getContractFactory(
-      "PermitERC20"
-    );
+    const PermitERC20 = await ethers.getContractFactory("PermitERC20");
     const erc20 = await PermitERC20.deploy();
 
     return { paymentChannel, erc20, deployer, serviceProvider, bob };
@@ -134,100 +127,4 @@ describe("PaymentChannel", function () {
         .to.not.be.reverted;
     });
   });
-
-  // sign a permit
-  const signPermitMessage = async (
-    erc20: PermitERC20,
-    signer: SignerWithAddress,
-    spender: Address,
-    value: BigNumber,
-    nonce: BigNumber,
-    deadline: BigNumber
-  ): Promise<Signature> => {
-    const domain = {
-      name: "PermitERC20",
-      version: "1",
-      chainId: network.config.chainId,
-      verifyingContract: erc20.address,
-    };
-    const types = {
-      Permit: [
-        { name: "owner", type: "address" },
-        { name: "spender", type: "address" },
-        { name: "value", type: "uint256" },
-        { name: "nonce", type: "uint256" },
-        { name: "deadline", type: "uint256" },
-      ],
-    };
-    const values = {
-      owner: signer.address,
-      spender: spender,
-      value: value,
-      nonce: nonce,
-      deadline: deadline,
-    };
-    const signature = await signer._signTypedData(domain, types, values);
-    return ethers.utils.splitSignature(signature);
-  };
-
-  // Sign a skMsg
-  const signSigningKeyMessage = async (
-    erc20: PermitERC20,
-    paymentChannel: TestPaymentChannel,
-    signer: SignerWithAddress,
-    id: BigNumber,
-    signingKeyAddress: Address,
-    recipient: Address,
-    spender: Address,
-    value: BigNumber,
-    nonce: BigNumber,
-    deadline: BigNumber,
-    permitSigV: number,
-    permitSigR: string,
-    permitSigS: string
-  ): Promise<Signature> => {
-    const domain = {
-      name: "PaymentChannel",
-      version: "1",
-      chainId: network.config.chainId,
-      verifyingContract: paymentChannel.address,
-    };
-    const types = {
-      Permit: [
-        { name: "owner", type: "address" },
-        { name: "spender", type: "address" },
-        { name: "value", type: "uint256" },
-        { name: "nonce", type: "uint256" },
-        { name: "deadline", type: "uint256" },
-      ],
-      SigningKeyMessage: [
-        { name: "id", type: "uint256" },
-        { name: "token", type: "address" },
-        { name: "signingKeyAddress", type: "address" },
-        { name: "recipient", type: "address" },
-        { name: "permitMsg", type: "Permit" },
-        { name: "v", type: "uint8" },
-        { name: "r", type: "bytes32" },
-        { name: "s", type: "bytes32" },
-      ],
-    };
-    const values = {
-      id,
-      token: erc20.address,
-      signingKeyAddress,
-      recipient,
-      permitMsg: {
-        owner: signer.address,
-        spender: spender,
-        value: value,
-        nonce: nonce,
-        deadline: deadline,
-      },
-      v: permitSigV,
-      r: permitSigR,
-      s: permitSigS,
-    };
-    const signature = await signer._signTypedData(domain, types, values);
-    return ethers.utils.splitSignature(signature);
-  };
 });

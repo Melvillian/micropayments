@@ -53,22 +53,6 @@ contract PaymentChannel is EIP712 {
 
     constructor() EIP712("PaymentChannel", "1") {}
 
-    // TODO, delete me
-    function testskPermitValidation(SigningKeyMessage calldata skMsg) public {
-        // 4. mark id as used
-        alreadyUsedIds[skMsg.id] = true;
-
-        IERC20Permit(skMsg.token).permit(
-            skMsg.permitMsg.owner,
-            address(this),
-            skMsg.permitMsg.value,
-            skMsg.permitMsg.deadline,
-            skMsg.permitMsg.v,
-            skMsg.permitMsg.r,
-            skMsg.permitMsg.s
-        );
-    }
-
     function settleChannel(
         SigningKeyMessage calldata skMsg,
         MicropaymentMessage calldata mpMsg
