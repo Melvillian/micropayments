@@ -5,6 +5,14 @@ import { PermitERC20, TestPaymentChannel } from "../typechain-types";
 
 type Address = string;
 
+export interface MicropaymentMessage {
+  id: BigNumber;
+  amount: BigNumber;
+  v: number;
+  r: string;
+  s: string;
+}
+
 // sign a permit
 export async function signPermitMessage(
   erc20: PermitERC20,
@@ -126,4 +134,28 @@ export async function signMicropaymentMessage(
   };
   const signature = await signer._signTypedData(domain, types, values);
   return ethers.utils.splitSignature(signature);
+}
+
+export async function generateMicropaymentMessage(
+  paymentChannel: TestPaymentChannel,
+  signingKey: Wallet,
+  id: BigNumber,
+  amount: BigNumber
+): Promise<MicropaymentMessage> {
+  const { v, r, s } = await signMicropaymentMessage(
+    paymentChannel,
+    signingKey,
+    id,
+    amount
+  );
+
+  const micropaymentMessage: MicropaymentMessage = {
+    id,
+    amount,
+    v,
+    r,
+    s,
+  };
+
+  return micropaymentMessage;
 }

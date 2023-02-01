@@ -11,6 +11,7 @@ import {
   signPermitMessage,
   signSigningKeyMessage,
   signMicropaymentMessage,
+  generateMicropaymentMessage,
 } from "./utils";
 
 const MAX_UINT256 = BigNumber.from(2).pow(256).sub(1);
@@ -138,22 +139,14 @@ describe("PaymentChannel", function () {
       let amount = BigNumber.from(1);
       const signingKey = Wallet.createRandom();
 
-      let { v, r, s } = await signMicropaymentMessage(
+      let micropaymentMessage = await generateMicropaymentMessage(
         paymentChannel,
         signingKey,
         id,
         amount
       );
 
-      let micropaymentMessage = {
-        id,
-        amount,
-        v,
-        r,
-        s,
-      };
-
-      // sign the first 1, with amount == 1
+      // sign the first one, with amount == 1
       await expect(
         paymentChannel.validateMicropaymentMessage(
           signingKey.address,
@@ -161,22 +154,14 @@ describe("PaymentChannel", function () {
         )
       ).to.not.be.reverted;
 
-      // now generate and sign the second 1, with amount == 2
+      // now generate and sign the second one, with amount == 2
       amount = BigNumber.from(2);
-      ({ v, r, s } = await signMicropaymentMessage(
+      micropaymentMessage = await generateMicropaymentMessage(
         paymentChannel,
         signingKey,
         id,
         amount
-      ));
-
-      micropaymentMessage = {
-        id,
-        amount,
-        v,
-        r,
-        s,
-      };
+      );
 
       await expect(
         paymentChannel.validateMicropaymentMessage(
@@ -186,7 +171,7 @@ describe("PaymentChannel", function () {
       ).to.not.be.reverted;
     });
 
-    xit("settling a micropayment channel works", async () => {
+    it("E2E test: settling a micropayment channel works", async () => {
       const { paymentChannel, erc20, deployer, serviceProvider } =
         await loadFixture(deployFixture);
 
@@ -207,7 +192,8 @@ describe("PaymentChannel", function () {
         s: permitSigS,
       } = ethers.utils.splitSignature(permitSig);
 
-      const signingKeyAddress = Wallet.createRandom().address;
+      const signingKey = Wallet.createRandom();
+      const signingKeyAddress = signingKey.address;
 
       const { v, r, s } = await signSigningKeyMessage(
         erc20,
@@ -247,6 +233,77 @@ describe("PaymentChannel", function () {
 
       // now simulate multiple micropayment channel signings, which will steadily increase
       // the amount of the channel
+
+      // simulate generating the 1st micropayment message
+      let amount = BigNumber.from(1);
+      let micropaymentMessage = await generateMicropaymentMessage(
+        paymentChannel,
+        signingKey,
+        id,
+        amount
+      );
+
+      // simulate generating the 1st micropayment message
+      amount = BigNumber.from(1);
+      micropaymentMessage = await generateMicropaymentMessage(
+        paymentChannel,
+        signingKey,
+        id,
+        amount
+      );
+
+      // simulator fast forwarding, as if we had paid for 1000's of
+      // prompts
+      // simulate generating the 1st micropayment message
+      amount = BigNumber.from(10_000);
+      micropaymentMessage = await generateMicropaymentMessage(
+        paymentChannel,
+        signingKey,
+        id,
+        amount
+      );
+
+      // at this point, the user is done using the service, and so it
+      // comes time for the service provider to settle the channel onchain
+      // using the signatures provided by the user
+
+      // check balances before settling
+      expect(await erc20.balanceOf(deployer.address)).to.equal(
+        BigNumber.from(1_000).mul(BigNumber.from(10).pow(18))
+      );
+      expect(await erc20.balanceOf(paymentChannel.address)).to.equal(
+        BigNumber.from(0)
+      );
+      expect(await erc20.balanceOf(serviceProvider.address)).to.equal(
+        BigNumber.from(0)
+      );
+
+      // settle the channel
+      await expect(
+        paymentChannel.settleChannel(signingKeyMessage, micropaymentMessage)
+      )
+        .to.emit(paymentChannel, "ChannelSettled")
+        .withArgs(
+          id,
+          erc20.address,
+          signingKeyAddress,
+          serviceProvider.address,
+          amount
+        );
+
+      // check balances after settling
+      expect(await erc20.balanceOf(deployer.address)).to.equal(
+        BigNumber.from(1_000).mul(BigNumber.from(10).pow(18)).sub(amount)
+      );
+      expect(await erc20.balanceOf(paymentChannel.address)).to.equal(
+        BigNumber.from(0)
+      );
+      expect(await erc20.balanceOf(serviceProvider.address)).to.equal(amount);
+
+      // now test that the same channel cannot be settled again
+      await expect(
+        paymentChannel.settleChannel(signingKeyMessage, micropaymentMessage)
+      ).to.be.revertedWithCustomError(paymentChannel, "IdAlreadyUsed");
     });
   });
 });

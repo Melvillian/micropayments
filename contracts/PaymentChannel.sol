@@ -68,10 +68,26 @@ contract PaymentChannel is EIP712 {
         if (alreadyUsedIds[skMsg.id]) revert IdAlreadyUsed(skMsg.id);
 
         // TODO: make sure only the skMsg.recipient (a.k.a. service provider) is able to call this function
-        // for this id, otherwise the user could submit an earlier message and steal funds
+        // for this id, otherwise the user could submit an earlier message and steal funds...
+        // Update: but wait, then the service could act malicious and never close it out, and withdraw MAX_UINT256
+        // from the user's wallet... hm, need to think about this more
+        //
+        // Ah ok here's how to solve it. There needs to be a penalty tx signed by the user that can be submitted
+        // by the service provider if the user broadcasts an earlier message. There are needs to be a window of
+        // time where the funds are not withdrawable by the user if they close it out, and the penalty tx needs
+        // to be submitted within that window. If no earlier message is broadcast, then the service provider
+        // should be able to close out the channel with the latest message, and withdraw the funds.
 
-        // 4. mark id as used
+        // 4. mark id as used. This id is to ensure that the same message can't be used twice
         alreadyUsedIds[skMsg.id] = true;
+
+        emit ChannelSettled(
+            skMsg.id,
+            skMsg.token,
+            skMsg.signingKeyAddress,
+            skMsg.recipient,
+            mpMsg.amount
+        );
 
         // 5. approve funds to be transferred
         // TODO: handle fee-on-transfer tokens
@@ -85,13 +101,15 @@ contract PaymentChannel is EIP712 {
             skMsg.permitMsg.s
         );
 
-        // 6. transfer the difference between the channel balance and the micropayment amount
-        //    to the recipient
+        // 6. transfer the payment message amount to the recipient
         uint256 min = mpMsg.amount < skMsg.permitMsg.value
             ? mpMsg.amount
             : skMsg.permitMsg.value;
-        uint256 amountToTransfer = skMsg.permitMsg.value - min;
-        IERC20(skMsg.token).transfer(skMsg.recipient, amountToTransfer);
+        IERC20(skMsg.token).transferFrom(
+            skMsg.permitMsg.owner,
+            skMsg.recipient,
+            min
+        );
     }
 
     /// @notice Using an array of EIP-2612 messages, withdraw the authorized amount of ERC20 token from each user's wallet
@@ -156,6 +174,14 @@ contract PaymentChannel is EIP712 {
         if (recoveredAddress != signingKeyAddress)
             revert InvalidMicropaymentMessageSignature();
     }
+
+    event ChannelSettled(
+        uint256 id,
+        address token,
+        address signingKeyAddress,
+        address recipient,
+        uint256 amount
+    );
 
     error InvalidInputLength();
     error IdAlreadyUsed(uint256 id);

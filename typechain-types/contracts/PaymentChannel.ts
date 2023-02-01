@@ -13,7 +13,11 @@ import type {
   Signer,
   utils,
 } from "ethers";
-import type { FunctionFragment, Result } from "@ethersproject/abi";
+import type {
+  FunctionFragment,
+  Result,
+  EventFragment,
+} from "@ethersproject/abi";
 import type { Listener, Provider } from "@ethersproject/providers";
 import type {
   TypedEventFilter,
@@ -137,8 +141,26 @@ export interface PaymentChannelInterface extends utils.Interface {
     data: BytesLike
   ): Result;
 
-  events: {};
+  events: {
+    "ChannelSettled(uint256,address,address,address,uint256)": EventFragment;
+  };
+
+  getEvent(nameOrSignatureOrTopic: "ChannelSettled"): EventFragment;
 }
+
+export interface ChannelSettledEventObject {
+  id: BigNumber;
+  token: string;
+  signingKeyAddress: string;
+  recipient: string;
+  amount: BigNumber;
+}
+export type ChannelSettledEvent = TypedEvent<
+  [BigNumber, string, string, string, BigNumber],
+  ChannelSettledEventObject
+>;
+
+export type ChannelSettledEventFilter = TypedEventFilter<ChannelSettledEvent>;
 
 export interface PaymentChannel extends BaseContract {
   connect(signerOrProvider: Signer | Provider | string): this;
@@ -206,7 +228,22 @@ export interface PaymentChannel extends BaseContract {
     ): Promise<void>;
   };
 
-  filters: {};
+  filters: {
+    "ChannelSettled(uint256,address,address,address,uint256)"(
+      id?: null,
+      token?: null,
+      signingKeyAddress?: null,
+      recipient?: null,
+      amount?: null
+    ): ChannelSettledEventFilter;
+    ChannelSettled(
+      id?: null,
+      token?: null,
+      signingKeyAddress?: null,
+      recipient?: null,
+      amount?: null
+    ): ChannelSettledEventFilter;
+  };
 
   estimateGas: {
     settleChannel(
