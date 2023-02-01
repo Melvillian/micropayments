@@ -13,7 +13,7 @@ contract PaymentChannel is EIP712 {
 
     bytes32 private constant SIGNING_KEY_MESSAGE_TYPEHASH =
         keccak256(
-            "SigningKeyMessage(uint256 id,address token,address signingKey,address recipient,Permit permitMsg)Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline))"
+            "SigningKeyMessage(uint256 id,address token,address signingKeyAddress,address recipient,Permit permitMsg,uint8 v,bytes32 r,bytes32 s)Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)"
         );
 
     bytes32 private constant MICROPAYMENT_MESSAGE_TYPEHASH =
@@ -35,7 +35,7 @@ contract PaymentChannel is EIP712 {
     struct SigningKeyMessage {
         uint256 id;
         address token;
-        address signingKey;
+        address signingKeyAddress;
         address recipient;
         Permit permitMsg;
         uint8 v;
@@ -53,15 +53,31 @@ contract PaymentChannel is EIP712 {
 
     constructor() EIP712("PaymentChannel", "1") {}
 
+    // TODO, delete me
+    function testskPermitValidation(SigningKeyMessage calldata skMsg) public {
+        // 4. mark id as used
+        alreadyUsedIds[skMsg.id] = true;
+
+        IERC20Permit(skMsg.token).permit(
+            skMsg.permitMsg.owner,
+            address(this),
+            skMsg.permitMsg.value,
+            skMsg.permitMsg.deadline,
+            skMsg.permitMsg.v,
+            skMsg.permitMsg.r,
+            skMsg.permitMsg.s
+        );
+    }
+
     function settleChannel(
         SigningKeyMessage calldata skMsg,
         MicropaymentMessage calldata mpMsg
     ) public {
         // 1. validate SigningKeyMessage
-        validateSigningKeyMessage(skMsg);
+        _validateSigningKeyMessage(skMsg);
 
         // 2. validate MicropaymentMessage using signing key
-        validateMicropaymentMessage(skMsg.signingKey, mpMsg);
+        _validateMicropaymentMessage(skMsg.signingKeyAddress, mpMsg);
 
         // 3. check that id's match
         if (skMsg.id != mpMsg.id) revert InvalidId(skMsg.id, mpMsg.id);
@@ -107,8 +123,8 @@ contract PaymentChannel is EIP712 {
         }
     }
 
-    function validateSigningKeyMessage(SigningKeyMessage calldata skMsg)
-        private
+    function _validateSigningKeyMessage(SigningKeyMessage calldata skMsg)
+        internal
         view
     {
         bytes32 structHash = keccak256(
@@ -116,7 +132,7 @@ contract PaymentChannel is EIP712 {
                 SIGNING_KEY_MESSAGE_TYPEHASH,
                 skMsg.id,
                 skMsg.token,
-                skMsg.signingKey,
+                skMsg.signingKeyAddress,
                 skMsg.recipient,
                 keccak256(
                     abi.encode(
@@ -125,12 +141,12 @@ contract PaymentChannel is EIP712 {
                         skMsg.permitMsg.spender,
                         skMsg.permitMsg.value,
                         skMsg.permitMsg.nonce,
-                        skMsg.permitMsg.deadline,
-                        skMsg.permitMsg.v,
-                        skMsg.permitMsg.r,
-                        skMsg.permitMsg.s
+                        skMsg.permitMsg.deadline
                     )
-                )
+                ),
+                skMsg.permitMsg.v,
+                skMsg.permitMsg.r,
+                skMsg.permitMsg.s
             )
         );
         bytes32 digest = _hashTypedDataV4(structHash);
@@ -140,17 +156,17 @@ contract PaymentChannel is EIP712 {
             revert InvalidSigningMessageSignature();
     }
 
-    function validateMicropaymentMessage(
-        address signingKey,
+    function _validateMicropaymentMessage(
+        address signingKeyAddress,
         MicropaymentMessage calldata mpMsg
-    ) private view {
+    ) internal view {
         bytes32 structHash = keccak256(
             abi.encode(MICROPAYMENT_MESSAGE_TYPEHASH, mpMsg.id, mpMsg.amount)
         );
         bytes32 digest = _hashTypedDataV4(structHash);
 
         address recoveredAddress = ecrecover(digest, mpMsg.v, mpMsg.r, mpMsg.s);
-        if (recoveredAddress != signingKey)
+        if (recoveredAddress != signingKeyAddress)
             revert InvalidMicropaymentMessageSignature();
     }
 
