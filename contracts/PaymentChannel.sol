@@ -3,13 +3,9 @@ pragma solidity ^0.8.9;
 
 import "@openzeppelin/contracts/token/ERC20/extensions/draft-IERC20Permit.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
 
-contract PaymentChannel {
-    bytes32 private constant DOMAIN_TYPEHASH =
-        keccak256(
-            "EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"
-        );
-
+contract PaymentChannel is EIP712 {
     bytes32 private constant PERMIT_TYPEHASH =
         keccak256(
             "Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)"
@@ -54,6 +50,8 @@ contract PaymentChannel {
         bytes32 r;
         bytes32 s;
     }
+
+    constructor() EIP712("PaymentChannel", "1") {}
 
     function settleChannel(
         SigningKeyMessage calldata skMsg,
@@ -113,31 +111,29 @@ contract PaymentChannel {
         private
         view
     {
-        bytes32 digest = keccak256(
-            abi.encodePacked(
-                "\x19\x01",
-                getDomainSeparator(),
+        bytes32 structHash = keccak256(
+            abi.encode(
+                SIGNING_KEY_MESSAGE_TYPEHASH,
+                skMsg.id,
+                skMsg.token,
+                skMsg.signingKey,
+                skMsg.recipient,
                 keccak256(
                     abi.encode(
-                        SIGNING_KEY_MESSAGE_TYPEHASH,
-                        skMsg.id,
-                        skMsg.token,
-                        skMsg.signingKey,
-                        skMsg.recipient,
-                        keccak256(
-                            abi.encode(
-                                PERMIT_TYPEHASH,
-                                skMsg.permitMsg.owner,
-                                skMsg.permitMsg.spender,
-                                skMsg.permitMsg.value,
-                                skMsg.permitMsg.nonce,
-                                skMsg.permitMsg.deadline
-                            )
-                        )
+                        PERMIT_TYPEHASH,
+                        skMsg.permitMsg.owner,
+                        skMsg.permitMsg.spender,
+                        skMsg.permitMsg.value,
+                        skMsg.permitMsg.nonce,
+                        skMsg.permitMsg.deadline,
+                        skMsg.permitMsg.v,
+                        skMsg.permitMsg.r,
+                        skMsg.permitMsg.s
                     )
                 )
             )
         );
+        bytes32 digest = _hashTypedDataV4(structHash);
 
         address recoveredAddress = ecrecover(digest, skMsg.v, skMsg.r, skMsg.s);
         if (recoveredAddress != skMsg.permitMsg.owner)
@@ -148,35 +144,14 @@ contract PaymentChannel {
         address signingKey,
         MicropaymentMessage calldata mpMsg
     ) private view {
-        bytes32 digest = keccak256(
-            abi.encodePacked(
-                "\x19\x01",
-                getDomainSeparator(),
-                keccak256(
-                    abi.encode(
-                        MICROPAYMENT_MESSAGE_TYPEHASH,
-                        mpMsg.id,
-                        mpMsg.amount
-                    )
-                )
-            )
+        bytes32 structHash = keccak256(
+            abi.encode(MICROPAYMENT_MESSAGE_TYPEHASH, mpMsg.id, mpMsg.amount)
         );
+        bytes32 digest = _hashTypedDataV4(structHash);
 
         address recoveredAddress = ecrecover(digest, mpMsg.v, mpMsg.r, mpMsg.s);
         if (recoveredAddress != signingKey)
             revert InvalidMicropaymentMessageSignature();
-    }
-
-    function getDomainSeparator() public view returns (bytes32) {
-        return
-            keccak256(
-                abi.encode(
-                    DOMAIN_TYPEHASH,
-                    keccak256(bytes("PaymentChannel")),
-                    block.chainid,
-                    address(this)
-                )
-            );
     }
 
     error InvalidInputLength();
