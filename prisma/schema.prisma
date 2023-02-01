@@ -15,3 +15,12 @@ model Signature {
   walletAddress String
   signature     Json
 }
+
+model PaymentChannel {
+  id        Int     @id @default(autoincrement())
+  from      String // wallet address
+  contents  String
+  signature Json
+  data      String // result from signed signature
+  closed    Boolean @default(false)
+}
