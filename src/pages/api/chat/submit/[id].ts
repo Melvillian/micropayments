@@ -42,6 +42,11 @@ export default async function handler(
       return;
     }
 
+    if (paymentChannel.closed) {
+      res.status(400).json({ error: "Payment channel already closed" });
+      return;
+    }
+
     // TODO: logic here to verify data
 
     const updatedPaymentChannel = await prisma.paymentChannel.update({
