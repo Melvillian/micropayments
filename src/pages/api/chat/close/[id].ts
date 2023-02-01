@@ -7,12 +7,6 @@ export default async function handler(
 ) {
   if (req.method === "POST") {
     const { id } = req.query;
-    const data = req.body.data;
-
-    if (!data) {
-      res.status(400).json({ error: "Missing data" });
-      return;
-    }
 
     const paymentChannel = await prisma.paymentChannel.findUnique({
       where: {
@@ -29,8 +23,6 @@ export default async function handler(
       res.status(400).json({ error: "Payment channel already closed" });
       return;
     }
-
-    // TODO: logic here to verify data
 
     const updatedPaymentChannel = await prisma.paymentChannel.update({
       where: {

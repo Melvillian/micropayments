@@ -1,46 +1,16 @@
+import { PaymentChannel } from "@prisma/client";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { NextPage } from "next";
 import { useEffect, useState } from "react";
 import { useAccount } from "wagmi";
 import Signature from "./components/Signature";
 
-const signatureExample = {
-  name: "Example Signature",
-  chain: "0x5",
-  types: {
-    Person: [
-      { name: "name", type: "string" },
-      { name: "wallet", type: "address" },
-    ],
-    Mail: [
-      { name: "from", type: "Person" },
-      { name: "to", type: "Person" },
-      { name: "contents", type: "string" },
-    ],
-  },
-  domain: {
-    name: "Ether Mail",
-    version: "1",
-    chainId: 5,
-    verifyingContract: "0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC",
-  },
-  primaryType: "Example",
-  value: {
-    from: {
-      name: "Cow",
-      wallet: "0xCD2a3d9F938E13CD947Ec05AbC7FE734Df8DD826",
-    },
-    to: {
-      name: "Bob",
-      wallet: "0xbBbBBBBbbBBBbbbBbbBbbbbBBbBbbbbBbBbbBBbB",
-    },
-    contents: "Hello, Bob!",
-  },
-};
-
 const Home: NextPage = () => {
   const { address, isConnected } = useAccount();
   const [account, setAccount] = useState("");
+  const [data, setData] = useState("");
+  const [closed, setClosed] = useState(false);
+  const [paymentChannel, setPaymentChannel] = useState<any | null>(null);
 
   useEffect(() => {
     if (isConnected && address) {
@@ -48,7 +18,7 @@ const Home: NextPage = () => {
     }
   }, [isConnected]);
 
-  const sendChatMessage = async (e: any) => {
+  const startPaymentChannel = async (e: any) => {
     e.preventDefault();
     const { message } = e.target;
     const endpoint = "/api/chat";
@@ -58,41 +28,145 @@ const Home: NextPage = () => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        message: message.value,
+        from: account,
+        contents: message.value,
       }),
     };
 
     const response = await fetch(endpoint, options);
     const result = await response.json();
-    alert(`Your answer: ${JSON.stringify(result)}`);
+
+    setPaymentChannel(result);
   };
 
-  return (
-    <div>
+  const header = () => {
+    return (
       <div className="flex justify-between content-center flex-row">
         <div className="text-3xl p-10">Micropayments</div>
         <div className="p-10">
           <ConnectButton />
         </div>
       </div>
-      {account && (
-        <div>
-          {account}
-          <Signature {...{ address: account, ...signatureExample }} />
-          <div className="p-2">
-            <form onSubmit={sendChatMessage}>
-              <input
-                className="p-2"
-                placeholder="what is life?"
-                type="text"
-                id="message"
-                name="message"
-              />
-              <button type="submit">Submit</button>
-            </form>
+    );
+  };
+
+  const noPaymentChannel = () => {
+    return (
+      <div className="p-2 flex flex-col">
+        Prompt:
+        <form onSubmit={startPaymentChannel} className={"flex flex-col"}>
+          <input
+            className="p-4 border-2 border-black rounded-lg "
+            placeholder="what is life?"
+            type="text"
+            id="message"
+            name="message"
+          />
+          <div className="pt-4">
+            <button
+              className="border-2 border-black rounded-lg p-2 w-[50%]"
+              type="submit"
+            >
+              Submit
+            </button>
           </div>
-        </div>
-      )}
+        </form>
+      </div>
+    );
+  };
+
+  const loggedOut = () => {
+    return (
+      <div>
+        <div>Not connected</div>
+      </div>
+    );
+  };
+
+  const closePaymentChannel = () => {
+    return (
+      <>
+        <button
+          onClick={submitClosePaymentChannel}
+          className="border-2 border-black rounded-lg p-2 w-[50%]"
+        >
+          close payment channel
+        </button>
+      </>
+    );
+  };
+
+  const signPaymentChannel = () => {
+    const signature = paymentChannel.signature;
+    return (
+      <>
+        <Signature
+          domain={signature.domain}
+          types={signature.types}
+          value={signature.value}
+          chain={signature.chain}
+          address={account}
+          name={signature.name}
+          primaryType={signature.primaryType}
+          success={signatureSigned}
+        />
+      </>
+    );
+  };
+
+  const signatureSigned = async (data: string) => {
+    setData(data);
+    const endpoint = `/api/chat/submit/${paymentChannel.id}`;
+    const options = {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from: account,
+        data: data,
+      }),
+    };
+
+    await fetch(endpoint, options);
+  };
+
+  const submitClosePaymentChannel = async () => {
+    const endpoint = `/api/chat/close/${paymentChannel.id}`;
+    const options = {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({}),
+    };
+
+    const response = await fetch(endpoint, options);
+    const result = await response.json();
+    if (response.ok) {
+      setClosed(true);
+    } else {
+      alert(result.error);
+    }
+  };
+
+  const loggedIn = () => {
+    return (
+      <div>
+        <div className="pb-20">Connected: {account}</div>
+        {/* <Signature {...{ address: account, ...signatureExample }} /> */}
+        {!paymentChannel && noPaymentChannel()}
+        {paymentChannel && (!data || data === "") && signPaymentChannel()}
+        {!closed && data && closePaymentChannel()}
+        {closed && <div>Payment Channel Closed</div>}
+      </div>
+    );
+  };
+
+  return (
+    <div>
+      <div>{header()}</div>
+      <div className="p-10">{!account ? loggedOut() : loggedIn()}</div>
     </div>
   );
 };
