@@ -47,6 +47,11 @@ export default async function handler(
       return;
     }
 
+    if (paymentChannel.data) {
+      res.status(400).json({ error: "Payment channel already submitted" });
+      return;
+    }
+
     // TODO: logic here to verify data
 
     const updatedPaymentChannel = await prisma.paymentChannel.update({
