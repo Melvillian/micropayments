@@ -14,7 +14,7 @@ contract TestPaymentChannel is PaymentChannel {
     function validateMicropaymentMessage(
         address signingKeyAddress,
         MicropaymentMessage calldata mpMsg
-    ) internal view {
+    ) external view {
         super._validateMicropaymentMessage(signingKeyAddress, mpMsg);
     }
 }

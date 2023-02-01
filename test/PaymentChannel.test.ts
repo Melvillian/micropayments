@@ -7,7 +7,11 @@ import {
   TestPaymentChannel,
   TestPaymentChannel__factory,
 } from "../typechain-types";
-import { signPermitMessage, signSigningKeyMessage } from "./utils";
+import {
+  signPermitMessage,
+  signSigningKeyMessage,
+  signMicropaymentMessage,
+} from "./utils";
 
 const MAX_UINT256 = BigNumber.from(2).pow(256).sub(1);
 const CHANNEL_MAX_AMOUNT = ethers.utils.parseEther("0.001");
@@ -125,6 +129,124 @@ describe("PaymentChannel", function () {
 
       await expect(paymentChannel.validateSigningKeyMessage(signingKeyMessage))
         .to.not.be.reverted;
+    });
+
+    it("validateMicropaymentMessage works", async () => {
+      const { paymentChannel } = await loadFixture(deployFixture);
+
+      const id = BigNumber.from(0);
+      let amount = BigNumber.from(1);
+      const signingKey = Wallet.createRandom();
+
+      let { v, r, s } = await signMicropaymentMessage(
+        paymentChannel,
+        signingKey,
+        id,
+        amount
+      );
+
+      let micropaymentMessage = {
+        id,
+        amount,
+        v,
+        r,
+        s,
+      };
+
+      // sign the first 1, with amount == 1
+      await expect(
+        paymentChannel.validateMicropaymentMessage(
+          signingKey.address,
+          micropaymentMessage
+        )
+      ).to.not.be.reverted;
+
+      // now generate and sign the second 1, with amount == 2
+      amount = BigNumber.from(2);
+      ({ v, r, s } = await signMicropaymentMessage(
+        paymentChannel,
+        signingKey,
+        id,
+        amount
+      ));
+
+      micropaymentMessage = {
+        id,
+        amount,
+        v,
+        r,
+        s,
+      };
+
+      await expect(
+        paymentChannel.validateMicropaymentMessage(
+          signingKey.address,
+          micropaymentMessage
+        )
+      ).to.not.be.reverted;
+    });
+
+    xit("settling a micropayment channel works", async () => {
+      const { paymentChannel, erc20, deployer, serviceProvider } =
+        await loadFixture(deployFixture);
+
+      const id = BigNumber.from(0);
+      const nonce = BigNumber.from(0);
+
+      const permitSig: Signature = await signPermitMessage(
+        erc20,
+        deployer,
+        paymentChannel.address,
+        CHANNEL_MAX_AMOUNT,
+        nonce,
+        MAX_UINT256 // never expires
+      );
+      const {
+        v: permitSigV,
+        r: permitSigR,
+        s: permitSigS,
+      } = ethers.utils.splitSignature(permitSig);
+
+      const signingKeyAddress = Wallet.createRandom().address;
+
+      const { v, r, s } = await signSigningKeyMessage(
+        erc20,
+        paymentChannel,
+        deployer,
+        id,
+        signingKeyAddress,
+        serviceProvider.address,
+        paymentChannel.address,
+        CHANNEL_MAX_AMOUNT,
+        nonce,
+        MAX_UINT256,
+        permitSigV,
+        permitSigR,
+        permitSigS
+      );
+
+      const signingKeyMessage = {
+        id,
+        token: erc20.address,
+        signingKeyAddress,
+        recipient: serviceProvider.address,
+        permitMsg: {
+          owner: deployer.address,
+          spender: paymentChannel.address,
+          value: CHANNEL_MAX_AMOUNT,
+          nonce,
+          deadline: MAX_UINT256,
+          v: permitSigV,
+          r: permitSigR,
+          s: permitSigS,
+        },
+        v,
+        r,
+        s,
+      };
+
+      // now simulate multiple micropayment channel signings, which will steadily increase
+      // the amount of the channel
     });
   });
 });

@@ -1,5 +1,5 @@
 import { ethers, network } from "hardhat";
-import { BigNumber, Signature } from "ethers";
+import { BigNumber, Signature, Wallet } from "ethers";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { TestPaymentChannel, PermitERC20 } from "../typechain-types";
 
@@ -40,7 +40,7 @@ export async function signPermitMessage(
   return ethers.utils.splitSignature(signature);
 }
 
-// Sign a skMsg
+// Sign a signing key message
 export async function signSigningKeyMessage(
   erc20: PermitERC20,
   paymentChannel: TestPaymentChannel,
@@ -96,6 +96,33 @@ export async function signSigningKeyMessage(
     v: permitSigV,
     r: permitSigR,
     s: permitSigS,
+  };
+  const signature = await signer._signTypedData(domain, types, values);
+  return ethers.utils.splitSignature(signature);
+}
+
+// Sign a micropayment message
+export async function signMicropaymentMessage(
+  paymentChannel: TestPaymentChannel,
+  signer: Wallet,
+  id: BigNumber,
+  amount: BigNumber
+): Promise<Signature> {
+  const domain = {
+    name: "PaymentChannel",
+    version: "1",
+    chainId: network.config.chainId,
+    verifyingContract: paymentChannel.address,
+  };
+  const types = {
+    MicropaymentMessage: [
+      { name: "id", type: "uint256" },
+      { name: "amount", type: "uint256" },
+    ],
+  };
+  const values = {
+    id,
+    amount,
   };
   const signature = await signer._signTypedData(domain, types, values);
   return ethers.utils.splitSignature(signature);

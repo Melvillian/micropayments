@@ -67,6 +67,9 @@ contract PaymentChannel is EIP712 {
         if (skMsg.id != mpMsg.id) revert InvalidId(skMsg.id, mpMsg.id);
         if (alreadyUsedIds[skMsg.id]) revert IdAlreadyUsed(skMsg.id);
 
+        // TODO: make sure only the skMsg.recipient (a.k.a. service provider) is able to call this function
+        // for this id, otherwise the user could submit an earlier message and steal funds
+
         // 4. mark id as used
         alreadyUsedIds[skMsg.id] = true;
 
