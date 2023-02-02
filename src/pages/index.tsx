@@ -9,6 +9,8 @@ const Home: NextPage = () => {
   const { address, isConnected } = useAccount();
   const [account, setAccount] = useState("");
   const [data, setData] = useState("");
+  const [chatGPT, setChatGPT] = useState("");
+  const [loading, setLoading] = useState(false);
   const [closed, setClosed] = useState(false);
   const [paymentChannel, setPaymentChannel] = useState<any | null>(null);
 
@@ -86,12 +88,20 @@ const Home: NextPage = () => {
   const closePaymentChannel = () => {
     return (
       <>
-        <button
-          onClick={submitClosePaymentChannel}
-          className="border-2 border-black rounded-lg p-2 w-[50%]"
-        >
-          close payment channel
-        </button>
+        {loading ? (
+          <>Loading result...</>
+        ) : (
+          <>
+            <div>Result</div>
+            <div>{chatGPT}</div>
+            <button
+              onClick={submitClosePaymentChannel}
+              className="border-2 border-black rounded-lg p-2 w-[50%]"
+            >
+              close payment channel
+            </button>
+          </>
+        )}
       </>
     );
   };
@@ -115,6 +125,7 @@ const Home: NextPage = () => {
   };
 
   const signatureSigned = async (data: string) => {
+    setLoading(true);
     setData(data);
     const endpoint = `/api/chat/submit/${paymentChannel.id}`;
     const options = {
@@ -128,7 +139,16 @@ const Home: NextPage = () => {
       }),
     };
 
-    await fetch(endpoint, options);
+    const result = await fetch(endpoint, options);
+
+    if (!result.ok) {
+      setChatGPT("Error");
+    } else {
+      const response = await result.json();
+      setChatGPT(response.result.choices[0].text);
+    }
+
+    setLoading(false);
   };
 
   const submitClosePaymentChannel = async () => {

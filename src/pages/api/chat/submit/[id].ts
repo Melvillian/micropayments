@@ -11,8 +11,8 @@ const getGPTCompletion = async (prompt: string) => {
     body: JSON.stringify({
       model: "text-davinci-003",
       prompt: prompt,
-      temperature: 0,
-      max_tokens: 7,
+      temperature: 0.7,
+      max_tokens: 2000,
     }),
   });
   return await response.json();
@@ -63,7 +63,11 @@ export default async function handler(
       },
     });
 
+    console.log("paymentChannel.contents");
+    console.log(paymentChannel.contents);
     const result = await getGPTCompletion(paymentChannel.contents);
+    console.log("result");
+    console.log(result);
     res.status(200).json({
       result,
       paymentChannel: updatedPaymentChannel,

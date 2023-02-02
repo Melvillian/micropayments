@@ -5,14 +5,16 @@ import "@rainbow-me/rainbowkit/styles.css";
 
 import { getDefaultWallets, RainbowKitProvider } from "@rainbow-me/rainbowkit";
 import { configureChains, createClient, WagmiConfig } from "wagmi";
-import { goerli } from "wagmi/chains";
-import { alchemyProvider } from "wagmi/providers/alchemy";
+import { sepolia } from "wagmi/chains";
 import { publicProvider } from "wagmi/providers/public";
+import { infuraProvider } from "wagmi/providers/infura";
+// import { alchemyProvider } from "wagmi/providers/alchemy";
 
 const { chains, provider } = configureChains(
-  [goerli],
+  [sepolia],
   [
-    alchemyProvider({ apiKey: "G-Uc_pdqbIAwHnom2xALqLjaYIJbPDvN" }),
+    infuraProvider({ apiKey: "e91a292e11584df8b746b55db859dee5" }),
+    // alchemyProvider({ apiKey: "G-Uc_pdqbIAwHnom2xALqLjaYIJbPDvN" }),
     publicProvider(),
   ]
 );

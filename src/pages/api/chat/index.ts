@@ -4,7 +4,7 @@ import { prisma } from "utils/prisma";
 const createSignature = (from: string, contents: string): object => {
   return {
     name: "Send Prompt to OpenAI",
-    chain: "0x5",
+    chain: "0xAA36A7",
     types: {
       EIP712Domain: [
         { name: "name", type: "string" },
@@ -20,7 +20,7 @@ const createSignature = (from: string, contents: string): object => {
     domain: {
       name: "Send Prompt to OpenAI",
       version: "1",
-      chainId: 5,
+      chainId: 11155111,
       verifyingContract: "0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC",
     },
     primaryType: "Prompt",
