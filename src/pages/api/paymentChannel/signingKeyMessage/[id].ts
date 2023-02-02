@@ -1,7 +1,7 @@
 import { PaymentChannel2 } from "@prisma/client";
 import { BigNumber } from "ethers";
 import { NextApiRequest, NextApiResponse } from "next";
-import { prisma } from "utils/prisma";
+import { prisma } from "../../../../../utils/prisma";
 
 const createSigningMessagePayload = (paymentChannel: PaymentChannel2): any => {
   // TODO: Replace with real contract address

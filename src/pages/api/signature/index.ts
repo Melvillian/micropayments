@@ -1,6 +1,6 @@
 // Next.js API route support: https://nextjs.org/docs/api-routes/introduction
 import type { NextApiRequest, NextApiResponse } from "next";
-import { prisma } from "utils/prisma";
+import { prisma } from "../../../../utils/prisma";
 
 const createSignature = async (req: NextApiRequest, res: NextApiResponse) => {
   const body = req.body;

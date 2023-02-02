@@ -1,6 +1,6 @@
 import { BigNumber } from "ethers";
 import { NextApiRequest, NextApiResponse } from "next";
-import { prisma } from "utils/prisma";
+import { prisma } from "../../../../utils/prisma";
 
 // TODO: Replace with real receipient address
 const RECIPIENT_ADDRESS = "0x0000000000000000000000000000000000000000";

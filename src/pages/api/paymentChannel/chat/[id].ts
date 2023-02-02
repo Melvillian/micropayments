@@ -1,5 +1,5 @@
 import { NextApiRequest, NextApiResponse } from "next";
-import { prisma } from "utils/prisma";
+import { prisma } from "../../../../../utils/prisma";
 
 const getGPTCompletion = async (prompt: string) => {
   const response = await fetch("https://api.openai.com/v1/completions", {
