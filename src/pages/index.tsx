@@ -1,68 +1,223 @@
-import { PaymentChannel } from "@prisma/client";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
+import { ethers } from "ethers";
 import { NextPage } from "next";
 import { useEffect, useState } from "react";
 import { useAccount } from "wagmi";
 import Signature from "./components/Signature";
 
 const Home: NextPage = () => {
-  const { address, isConnected } = useAccount();
-  const [account, setAccount] = useState("");
-  const [data, setData] = useState("");
-  const [chatGPT, setChatGPT] = useState("");
   const [loading, setLoading] = useState(false);
-  const [closed, setClosed] = useState(false);
-  const [paymentChannel, setPaymentChannel] = useState<any | null>(null);
+
+  const [account, setAccount] = useState("");
+  // const [account, setAccount] = useState("");
+  const [signingKeyAddress, setsigningKeyAddress] = useState("");
+  const [permitTuple, setPermitTuple] = useState<any>(null);
+  const [unsignedPermitPayload, setUnsignedPermitPayload] = useState<any>(null);
+
+  // SKM = SigningKeyMessage
+  const [skmTuple, setSKMTuple] = useState<any>(null);
+  const [unsignedSKMPayload, setUnsignedSKMPayload] = useState<any>(null);
+
+  const [promptHistory, setPromptHistory] = useState<string[]>([]);
+  const [responseHistory, setResponseHistory] = useState<string[]>([]);
+
+  const { address, isConnected } = useAccount();
 
   useEffect(() => {
     if (isConnected && address) {
       setAccount(address);
+      const signer = ethers.Wallet.createRandom();
+      setsigningKeyAddress(signer.address);
     }
   }, [isConnected]);
 
-  const startPaymentChannel = async (e: any) => {
-    e.preventDefault();
-    const { message } = e.target;
-    const endpoint = "/api/chat";
+  const loggedOut = () => {
+    return (
+      <div>
+        <div>Not connected</div>
+      </div>
+    );
+  };
+
+  const startPaymentChannelComponent = () => {
+    if (unsignedPermitPayload || permitTuple) {
+      return;
+    }
+
+    return (
+      <form onSubmit={startPaymentChannel} className={"flex flex-col"}>
+        <input
+          className="p-4 border-2 border-black rounded-lg "
+          placeholder="what is life?"
+          type="text"
+          id="prompt"
+          name="prompt"
+        />
+        <div className="pt-4">
+          <button
+            className="border-2 border-black rounded-lg p-2 w-[50%]"
+            type="submit"
+          >
+            Submit
+          </button>
+        </div>
+      </form>
+    );
+  };
+
+  const permitSignatureSuccess = async (data: string) => {
+    console.log("success");
+    console.log(data);
+    const { v, r, s } = ethers.utils.splitSignature(data);
+    console.log({ v, r, s });
+    setPermitTuple({ v, r, s });
+
+    const endpoint = `/api/paymentChannel/signingKeyMessage/${unsignedPermitPayload.paymentChannelId}`;
+
     const options = {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: account,
-        contents: message.value,
+        v: v,
+        r: r,
+        s: s,
       }),
     };
 
     const response = await fetch(endpoint, options);
-    const result = await response.json();
+    if (response.status !== 200) {
+      alert("error");
+      return;
+    }
 
-    setPaymentChannel(result);
+    setUnsignedSKMPayload(await response.json());
   };
 
-  const header = () => {
+  const signUnsignedPermitPayloadComponent = () => {
+    if (permitTuple || !unsignedPermitPayload) return;
+
     return (
-      <div className="flex justify-between content-center flex-row">
-        <div className="text-3xl p-10">Micropayments</div>
-        <div className="p-10">
-          <ConnectButton />
-        </div>
-      </div>
+      <Signature
+        domain={unsignedPermitPayload.domain}
+        types={unsignedPermitPayload.types}
+        value={unsignedPermitPayload.values}
+        chain={unsignedPermitPayload.domain.chainId}
+        address={account}
+        name={unsignedPermitPayload.domain.name}
+        primaryType={"Permit"}
+        message={"Permit USDC"}
+        success={permitSignatureSuccess}
+      />
     );
   };
 
-  const noPaymentChannel = () => {
+  const signingKeySuccess = async (data: string) => {
+    setLoading(true);
+    console.log("success signingKeySuccess");
+    console.log(data);
+    const { v, r, s } = ethers.utils.splitSignature(data);
+    console.log({ v, r, s });
+    setSKMTuple({ v, r, s });
+
+    const endpoint = `/api/paymentChannel/chat/${unsignedPermitPayload.paymentChannelId}`;
+    const options = {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        prompt: promptHistory[0],
+      }),
+    };
+
+    const response = await fetch(endpoint, options);
+    if (response.status !== 200) {
+      setResponseHistory(["error"]);
+      return;
+    }
+
+    const result = await response.json();
+    setResponseHistory([result.result]);
+    setLoading(false);
+  };
+
+  const signSigningKeyMessageComponent = () => {
+    if (!permitTuple || !unsignedSKMPayload || skmTuple) return;
     return (
-      <div className="p-2 flex flex-col">
-        Prompt:
-        <form onSubmit={startPaymentChannel} className={"flex flex-col"}>
+      <Signature
+        domain={unsignedSKMPayload.domain}
+        types={unsignedSKMPayload.types}
+        value={unsignedSKMPayload.values}
+        chain={unsignedSKMPayload.domain.chainId}
+        address={account}
+        name={unsignedSKMPayload.domain.name}
+        primaryType={"Signing Key"}
+        message={"Authorize Signing Key"}
+        success={signingKeySuccess}
+      />
+    );
+  };
+
+  const submitPrompt = async (e: any) => {
+    setLoading(true);
+    e.preventDefault();
+    const endpoint = `/api/paymentChannel/chat/${unsignedPermitPayload.paymentChannelId}`;
+    const options = {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        prompt: e.target.prompt.value,
+      }),
+    };
+
+    const promptHistoryCopy = [...promptHistory];
+    promptHistoryCopy.push(e.target.prompt.value);
+    setPromptHistory(promptHistoryCopy);
+
+    let gptResponse = "error";
+
+    const response = await fetch(endpoint, options);
+
+    if (response.status === 200) {
+      const result = await response.json();
+      gptResponse = result.result;
+    }
+
+    const responseHistoryCopy = [...responseHistory];
+    responseHistoryCopy.push(gptResponse);
+    setResponseHistory(responseHistoryCopy);
+
+    setLoading(false);
+  };
+
+  const chatLoop = () => {
+    if (!permitTuple || !unsignedSKMPayload || !skmTuple) return;
+
+    return (
+      <div className="flex flex-col">
+        {promptHistory.map((prompt, index) => {
+          return (
+            <div key={index} className="flex flex-row">
+              <div className="border-2 border-black rounded-lg p-2 w-[50%]">
+                You: {prompt}
+              </div>
+              <div className="border-2 border-black rounded-lg p-2 w-[50%]">
+                Chat GPT: {responseHistory[index]}
+              </div>
+            </div>
+          );
+        })}
+        <form onSubmit={submitPrompt} className={"pt-4 flex flex-col"}>
           <input
             className="p-4 border-2 border-black rounded-lg "
             placeholder="what is life?"
             type="text"
-            id="message"
-            name="message"
+            id="prompt"
+            name="prompt"
           />
           <div className="pt-4">
             <button
@@ -77,57 +232,49 @@ const Home: NextPage = () => {
     );
   };
 
-  const loggedOut = () => {
+  const closeChannelOnClick = async () => {};
+  const closeChannel = () => {
+    if (!permitTuple || !unsignedSKMPayload || !skmTuple) return;
+
     return (
-      <div>
-        <div>Not connected</div>
+      <div className="pt-4">
+        <button
+          onClick={closeChannelOnClick}
+          className="border-2 border-black rounded-lg p-2 w-[50%]"
+          type="submit"
+        >
+          Close Channel
+        </button>
       </div>
     );
   };
 
-  const closePaymentChannel = () => {
+  const loggedIn = () => {
     return (
-      <>
+      <div>
+        <div className="">Connected: {account}</div>
+        <div className="pb-20">Signing key: {signingKeyAddress}</div>
         {loading ? (
-          <>Loading result...</>
+          <div>Loading...</div>
         ) : (
           <>
-            <div>Result</div>
-            <div>{chatGPT}</div>
-            <button
-              onClick={submitClosePaymentChannel}
-              className="border-2 border-black rounded-lg p-2 w-[50%]"
-            >
-              close payment channel
-            </button>
+            <>{startPaymentChannelComponent()}</>
+            <>{signUnsignedPermitPayloadComponent()}</>
+            <>{signSigningKeyMessageComponent()}</>
+            <>{chatLoop()}</>
+            <>{closeChannel()}</>
           </>
         )}
-      </>
+      </div>
     );
   };
 
-  const signPaymentChannel = () => {
-    const signature = paymentChannel.signature;
-    return (
-      <>
-        <Signature
-          domain={signature.domain}
-          types={signature.types}
-          value={signature.value}
-          chain={signature.chain}
-          address={account}
-          name={signature.name}
-          primaryType={signature.primaryType}
-          success={signatureSigned}
-        />
-      </>
-    );
-  };
+  const startPaymentChannel = async (e: any) => {
+    e.preventDefault();
+    const { prompt } = e.target;
 
-  const signatureSigned = async (data: string) => {
-    setLoading(true);
-    setData(data);
-    const endpoint = `/api/chat/submit/${paymentChannel.id}`;
+    setPromptHistory([prompt.value]);
+    const endpoint = "/api/paymentChannel";
     const options = {
       method: "POST",
       headers: {
@@ -135,59 +282,34 @@ const Home: NextPage = () => {
       },
       body: JSON.stringify({
         from: account,
-        data: data,
+        signingKeyAddress: signingKeyAddress,
       }),
-    };
-
-    const result = await fetch(endpoint, options);
-
-    if (!result.ok) {
-      setChatGPT("Error");
-    } else {
-      const response = await result.json();
-      setChatGPT(response.result.choices[0].text);
-    }
-
-    setLoading(false);
-  };
-
-  const submitClosePaymentChannel = async () => {
-    const endpoint = `/api/chat/close/${paymentChannel.id}`;
-    const options = {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({}),
     };
 
     const response = await fetch(endpoint, options);
     const result = await response.json();
-    if (response.ok) {
-      setClosed(true);
-    } else {
-      alert(result.error);
-    }
+    console.log(JSON.stringify(result));
+    setUnsignedPermitPayload(result);
   };
 
-  const loggedIn = () => {
+  const header = () => {
     return (
-      <div>
-        <div className="pb-20">Connected: {account}</div>
-        {/* <Signature {...{ address: account, ...signatureExample }} /> */}
-        {/* {!paymentChannel && noPaymentChannel()}
-        {paymentChannel && (!data || data === "") && signPaymentChannel()}
-        {!closed && data && closePaymentChannel()}
-        {closed && <div>Payment Channel Closed</div>} */}
+      <div className="flex justify-between content-center flex-row">
+        <div className="text-3xl p-10">Micropayments</div>
+        <div className="p-10">
+          <ConnectButton />
+        </div>
       </div>
     );
   };
 
   return (
-    <div>
-      <div>{header()}</div>
-      <div className="p-10">{!account ? loggedOut() : loggedIn()}</div>
-    </div>
+    <>
+      <div>
+        <div>{header()}</div>
+        <div className="p-10">{!account ? loggedOut() : loggedIn()}</div>
+      </div>
+    </>
   );
 };
 
