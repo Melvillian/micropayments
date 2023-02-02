@@ -1,4 +1,5 @@
-// Uncomment below. Commented so CI/CD doesn't fail.
+import { ethers } from "ethers";
+class Example {}
 
 // async function main() {
 //   // const PaymentChannel = await ethers.getContractFactory("PaymentChannel");
@@ -13,6 +14,3 @@
 //   console.error(error);
 //   process.exitCode = 1;
 // });
-
-import { ethers } from "ethers";
-class Hello {}
