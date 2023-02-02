@@ -1,4 +1,4 @@
-import "@/styles/globals.css";
+import "src/styles/globals.css";
 import type { AppProps } from "next/app";
 
 import "@rainbow-me/rainbowkit/styles.css";
@@ -8,7 +8,6 @@ import { configureChains, createClient, WagmiConfig } from "wagmi";
 import { sepolia } from "wagmi/chains";
 import { publicProvider } from "wagmi/providers/public";
 import { infuraProvider } from "wagmi/providers/infura";
-// import { alchemyProvider } from "wagmi/providers/alchemy";
 
 const { chains, provider } = configureChains(
   [sepolia],

@@ -1,6 +1,6 @@
 import { useSignTypedData } from "wagmi";
 import { switchNetwork } from "@wagmi/core";
-import Button from "./Button";
+import Button from "src/pages/components/Button";
 import { useEffect } from "react";
 
 export default function Signature(props: any) {
