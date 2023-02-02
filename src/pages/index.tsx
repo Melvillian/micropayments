@@ -88,7 +88,6 @@ const Home: NextPage = () => {
 
     const response = await fetch(endpoint, options);
     if (response.status !== 200) {
-      alert("error");
       return;
     }
 
