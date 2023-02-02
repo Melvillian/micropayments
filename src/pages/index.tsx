@@ -175,10 +175,10 @@ const Home: NextPage = () => {
       <div>
         <div className="pb-20">Connected: {account}</div>
         {/* <Signature {...{ address: account, ...signatureExample }} /> */}
-        {!paymentChannel && noPaymentChannel()}
+        {/* {!paymentChannel && noPaymentChannel()}
         {paymentChannel && (!data || data === "") && signPaymentChannel()}
         {!closed && data && closePaymentChannel()}
-        {closed && <div>Payment Channel Closed</div>}
+        {closed && <div>Payment Channel Closed</div>} */}
       </div>
     );
   };

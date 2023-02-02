@@ -1,13 +1,13 @@
 // require("@nomicfoundation/hardhat-toolbox");
 
-import { HardhatUserConfig } from "hardhat/config";
-import "@nomicfoundation/hardhat-toolbox";
+// import { HardhatUserConfig } from "hardhat/config";
+// import "@nomicfoundation/hardhat-toolbox";
 
 import * as dotenv from "dotenv";
 
 dotenv.config();
 
-const config: HardhatUserConfig = {
+const config = {
   solidity: {
     version: "0.8.17",
     settings: {

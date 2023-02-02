@@ -60,20 +60,20 @@ export default function Signature(props: any) {
 
   return (
     <div className="flex flex-col">
-      <div className="underline">Signature Details</div>
+      {/* <div className="underline">Signature Details</div>
       <div>Chain: {props.chain}</div>
       <div>Name: {props.name}</div>
       <div>Primary Type: {props.primaryType}</div>
       <div>Domain: {JSON.stringify(props.domain)}</div>
       <div>Types: {JSON.stringify(props.types)}</div>
-      <div>Value: {JSON.stringify(props.value)}</div>
+      <div>Value: {JSON.stringify(props.value)}</div> */}
       <div className="pt-4">
         <Button
           className=" border-2 border-black rounded-lg p-2 m-4"
           disabled={isLoading}
           onClick={runSignature}
         >
-          Execute
+          {props.message || "Sign"}
         </Button>
       </div>
       <div className="break-all">

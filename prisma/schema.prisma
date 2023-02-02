@@ -24,3 +24,24 @@ model PaymentChannel {
   data      String // result from signed signature
   closed    Boolean @default(false)
 }
+
+model PaymentChannel2 {
+  id                     Int     @id @default(autoincrement())
+  owner                  String // wallet address
+  spender                String // same thing as payment channel contract 
+  amount                 Int     @default(0) // amount of tokens used: 1, 2, 3, 4...
+  value                  BigInt
+  nonce                  BigInt
+  deadline               String
+  token                  String // erc 20 token address/ verifying contract 
+  paymentChannelContract String // payment channel contract address
+  signingKeyAddress      String // signing key address
+  recipient              String? // sevice provider address
+  permitV                Int?
+  permitR                String?
+  permitS                String?
+  microPaymentMessageV   Int?
+  microPaymentMessageR   String?
+  microPaymentMessageS   String?
+  closed                 Boolean @default(false)
+}
