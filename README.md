@@ -28,7 +28,9 @@ set the `NEXT_PUBLIC_PAYMENT_CHANNEL_ADDRESS` environment variable to the addres
 ### Final Environment Variables
 
 Finally, set the `NEXT_PUBLIC_RECIPIENT_ADDRESS` environment variable to be the address that you want to receive payment
-to via the micropayment channel. The rest of the environment variables are self explanatory (if not, please reach out via an issue!):
+to via the micropayment channel.
+
+The rest of the environment variables are self explanatory (if not, please reach out via an issue!):
 
 - `OPENAI_API_KEY`
 - `SEPOLIA_URL`
