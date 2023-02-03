@@ -7,11 +7,12 @@ import Signature from "./components/Signature";
 
 const Home: NextPage = () => {
   const [loading, setLoading] = useState(false);
+  const [openTab, setOpenTab] = useState(1);
 
   const [account, setAccount] = useState("");
   // const [account, setAccount] = useState("");
   const [signingKeyAddress, setsigningKeyAddress] = useState("");
-  const [signingKeySigner, setSigningKeySigner] = useState<Signer | null>(null)
+  const [signingKeySigner, setSigningKeySigner] = useState<Signer | null>(null);
 
   const [permitTuple, setPermitTuple] = useState<any>(null);
   const [unsignedPermitPayload, setUnsignedPermitPayload] = useState<any>(null);
@@ -126,7 +127,10 @@ const Home: NextPage = () => {
     console.log(`signing key message sig: {${v}, ${r}, ${s}}`);
     setSKMTuple({ v, r, s });
 
-    const signedMicropaymentMessage = await signMicropaymentMessage(amount, unsignedPermitPayload.paymentChannelId);
+    const signedMicropaymentMessage = await signMicropaymentMessage(
+      amount,
+      unsignedPermitPayload.paymentChannelId
+    );
 
     const endpoint = `/api/paymentChannel/chat/${unsignedPermitPayload.paymentChannelId}`;
     const options = {
@@ -170,7 +174,8 @@ const Home: NextPage = () => {
   };
 
   const signMicropaymentMessage = async (id: number, amount: BigNumber) => {
-    const paymentChannelContract = process.env.NEXT_PUBLIC_PAYMENT_CHANNEL_ADDRESS
+    const paymentChannelContract =
+      process.env.NEXT_PUBLIC_PAYMENT_CHANNEL_ADDRESS;
 
     const domain = {
       name: "PaymentChannel",
@@ -188,16 +193,23 @@ const Home: NextPage = () => {
       id,
       amount,
     };
-    const signature = await signingKeySigner?._signTypedData(domain, types, values);
+    const signature = await signingKeySigner?._signTypedData(
+      domain,
+      types,
+      values
+    );
     return ethers.utils.splitSignature(signature);
-  }
+  };
 
   const submitPrompt = async (e: any) => {
     setLoading(true);
     e.preventDefault();
 
-    console.log(`amount here should be 2, and it is: ${amount}}`)
-    const signedMicropaymentMessage = await signMicropaymentMessage(amount, unsignedPermitPayload.paymentChannelId);
+    console.log(`amount here should be 2, and it is: ${amount}}`);
+    const signedMicropaymentMessage = await signMicropaymentMessage(
+      amount,
+      unsignedPermitPayload.paymentChannelId
+    );
 
     const endpoint = `/api/paymentChannel/chat/${unsignedPermitPayload.paymentChannelId}`;
     const options = {
@@ -340,11 +352,48 @@ const Home: NextPage = () => {
     );
   };
 
+  const tabs = () => {
+    return (
+      <div>
+        <div className="flex flex-col items-center justify-center">
+          <ul className="flex justify-between items-center flex-row">
+            <li>
+              <a
+                href="#"
+                onClick={() => setOpenTab(1)}
+                className=" px-4 py-2 mx-10 text-gray-600 bg-white rounded shadow"
+              >
+                User
+              </a>
+            </li>
+            <li>
+              <a
+                href="#"
+                onClick={() => setOpenTab(2)}
+                className="px-4 py-2 mx-10 text-gray-600 bg-white rounded shadow"
+              >
+                Admin
+              </a>
+            </li>
+          </ul>
+          <div className="pt-10">
+            <div className={openTab === 1 ? "block" : "hidden"}>
+              {loggedIn()}
+            </div>
+            <div className={openTab === 2 ? "block" : "hidden"}>
+              React JS with Tailwind CSS Tab 2 Content show
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <>
       <div>
         <div>{header()}</div>
-        <div className="p-10">{!account ? loggedOut() : loggedIn()}</div>
+        <div className="p-10">{!account ? loggedOut() : tabs()}</div>
       </div>
     </>
   );
