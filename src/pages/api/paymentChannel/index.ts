@@ -2,10 +2,10 @@ import { BigNumber } from "ethers";
 import { NextApiRequest, NextApiResponse } from "next";
 import { prisma } from "../../../../utils/prisma";
 
-const RECIPIENT_ADDRESS = process.env.RECIPIENT_ADDRESS;
+const RECIPIENT_ADDRESS = process.env.NEXT_PUBLIC_RECIPIENT_ADDRESS;
 
 const createPermitPayload = (from: string): any => {
-  const erc20Contract = process.env.USDC_ADDRESS;
+  const erc20Contract = process.env.NEXT_PUBLIC_USDC_ADDRESS;
   const paymentChannelContract = process.env.NEXT_PUBLIC_PAYMENT_CHANNEL_ADDRESS
 
   const domain = {

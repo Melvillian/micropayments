@@ -2,7 +2,8 @@ import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { BigNumber, ethers, Signer } from "ethers";
 import { NextPage } from "next";
 import { useEffect, useState } from "react";
-import { useAccount } from "wagmi";
+import { useAccount,  } from "wagmi";
+import { fetchSigner } from '@wagmi/core';
 import Signature from "./components/Signature";
 
 const Home: NextPage = () => {
@@ -22,6 +23,7 @@ const Home: NextPage = () => {
 
   // micropayment message
   const [amount, setAmount] = useState<any>(1);
+  const [mpmTuple, setMPMTuple] = useState<any>(null);
 
   const [promptHistory, setPromptHistory] = useState<string[]>([]);
   const [responseHistory, setResponseHistory] = useState<string[]>([]);
@@ -127,6 +129,7 @@ const Home: NextPage = () => {
     setSKMTuple({ v, r, s });
 
     const signedMicropaymentMessage = await signMicropaymentMessage(amount, unsignedPermitPayload.paymentChannelId);
+    setMPMTuple(signedMicropaymentMessage);
 
     const endpoint = `/api/paymentChannel/chat/${unsignedPermitPayload.paymentChannelId}`;
     const options = {
@@ -198,6 +201,7 @@ const Home: NextPage = () => {
 
     console.log(`amount here should be 2, and it is: ${amount}}`)
     const signedMicropaymentMessage = await signMicropaymentMessage(amount, unsignedPermitPayload.paymentChannelId);
+    setMPMTuple(signedMicropaymentMessage);
 
     const endpoint = `/api/paymentChannel/chat/${unsignedPermitPayload.paymentChannelId}`;
     const options = {
@@ -269,7 +273,49 @@ const Home: NextPage = () => {
     );
   };
 
-  const closeChannelOnClick = async () => {};
+  const closeChannelOnClick = async () => {
+    const signer = await fetchSigner();
+    const paymentChannelContract = new ethers.Contract(
+      process.env.NEXT_PUBLIC_PAYMENT_CHANNEL_ADDRESS!,
+      PaymentChannelABI,
+      signer as Signer
+    );
+
+    const signingKeyMessage = {
+      id: unsignedPermitPayload.paymentChannelId,
+      token: process.env.NEXT_PUBLIC_USDC_ADDRESS,
+      signingKeyAddress,
+      recipient: process.env.NEXT_PUBLIC_RECIPIENT_ADDRESS,
+      permitMsg: {
+        owner: unsignedPermitPayload.owner,
+        spender: unsignedPermitPayload.spender,
+        value: unsignedPermitPayload.value,
+        nonce: unsignedPermitPayload.nonce,
+        deadline: unsignedPermitPayload.deadline,
+        v: permitTuple.v,
+        r: permitTuple.r,
+        s: permitTuple.s,
+      },
+      v: skmTuple.v,
+      r: skmTuple.r,
+      s: skmTuple.s,
+    };
+    console.log(`signingKeyMessage: ${JSON.stringify(signingKeyMessage)}`);
+
+    const micropaymentMessage = {
+      id: unsignedPermitPayload.paymentChannelId,
+      amount: amount - 1, // amount holds the next amount to be signed,
+      // so we need to subtract 1 to get the current amount
+      mpmTuple.v,
+      mpmTuple.r,
+      mpmTuple.s,
+    };
+
+    await paymentChannelContract.settleChannel(
+      
+    )
+
+  };
   const closeChannel = () => {
     if (!permitTuple || !unsignedSKMPayload || !skmTuple) return;
 
@@ -351,3 +397,376 @@ const Home: NextPage = () => {
 };
 
 export default Home;
+
+
+const PaymentChannelABI = [
+  {
+    "inputs": [],
+    "stateMutability": "nonpayable",
+    "type": "constructor"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "blockTimestamp",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "deadline",
+        "type": "uint256"
+      }
+    ],
+    "name": "DeadlineTooEarly",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "id",
+        "type": "uint256"
+      }
+    ],
+    "name": "IdAlreadyUsed",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "skMsgId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "mpMsgId",
+        "type": "uint256"
+      }
+    ],
+    "name": "InvalidId",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidInputLength",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidMicropaymentMessageSignature",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidSigningMessageSignature",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "spender",
+        "type": "address"
+      }
+    ],
+    "name": "InvalidSpender",
+    "type": "error"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "id",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "signingKeyAddress",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "recipient",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      }
+    ],
+    "name": "ChannelSettled",
+    "type": "event"
+  },
+  {
+    "inputs": [
+      {
+        "components": [
+          {
+            "internalType": "uint256",
+            "name": "id",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "token",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "signingKeyAddress",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "recipient",
+            "type": "address"
+          },
+          {
+            "components": [
+              {
+                "internalType": "address",
+                "name": "owner",
+                "type": "address"
+              },
+              {
+                "internalType": "address",
+                "name": "spender",
+                "type": "address"
+              },
+              {
+                "internalType": "uint256",
+                "name": "value",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "nonce",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "deadline",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint8",
+                "name": "v",
+                "type": "uint8"
+              },
+              {
+                "internalType": "bytes32",
+                "name": "r",
+                "type": "bytes32"
+              },
+              {
+                "internalType": "bytes32",
+                "name": "s",
+                "type": "bytes32"
+              }
+            ],
+            "internalType": "struct PaymentChannel.Permit",
+            "name": "permitMsg",
+            "type": "tuple"
+          },
+          {
+            "internalType": "uint8",
+            "name": "v",
+            "type": "uint8"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "r",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "s",
+            "type": "bytes32"
+          }
+        ],
+        "internalType": "struct PaymentChannel.SigningKeyMessage",
+        "name": "skMsg",
+        "type": "tuple"
+      },
+      {
+        "components": [
+          {
+            "internalType": "uint256",
+            "name": "id",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "amount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint8",
+            "name": "v",
+            "type": "uint8"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "r",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "s",
+            "type": "bytes32"
+          }
+        ],
+        "internalType": "struct PaymentChannel.MicropaymentMessage",
+        "name": "mpMsg",
+        "type": "tuple"
+      }
+    ],
+    "name": "settleChannel",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "components": [
+          {
+            "internalType": "uint256",
+            "name": "id",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "token",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "signingKeyAddress",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "recipient",
+            "type": "address"
+          },
+          {
+            "components": [
+              {
+                "internalType": "address",
+                "name": "owner",
+                "type": "address"
+              },
+              {
+                "internalType": "address",
+                "name": "spender",
+                "type": "address"
+              },
+              {
+                "internalType": "uint256",
+                "name": "value",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "nonce",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "deadline",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint8",
+                "name": "v",
+                "type": "uint8"
+              },
+              {
+                "internalType": "bytes32",
+                "name": "r",
+                "type": "bytes32"
+              },
+              {
+                "internalType": "bytes32",
+                "name": "s",
+                "type": "bytes32"
+              }
+            ],
+            "internalType": "struct PaymentChannel.Permit",
+            "name": "permitMsg",
+            "type": "tuple"
+          },
+          {
+            "internalType": "uint8",
+            "name": "v",
+            "type": "uint8"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "r",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "s",
+            "type": "bytes32"
+          }
+        ],
+        "internalType": "struct PaymentChannel.SigningKeyMessage[]",
+        "name": "skMsgs",
+        "type": "tuple[]"
+      },
+      {
+        "components": [
+          {
+            "internalType": "uint256",
+            "name": "id",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "amount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint8",
+            "name": "v",
+            "type": "uint8"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "r",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "s",
+            "type": "bytes32"
+          }
+        ],
+        "internalType": "struct PaymentChannel.MicropaymentMessage[]",
+        "name": "mpMsgs",
+        "type": "tuple[]"
+      }
+    ],
+    "name": "settleChannels",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  }
+]
