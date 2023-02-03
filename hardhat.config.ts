@@ -19,10 +19,10 @@ const config: HardhatUserConfig = {
   },
   networks: {
     hardhat: {
-      chainId: 11155111,
+      chainId: 11155161,
       forking: {
         url: process.env.SEPOLIA_URL || "",
-        blockNumber: 2822027
+        blockNumber: 2822389
       },
       allowUnlimitedContractSize: true
     },

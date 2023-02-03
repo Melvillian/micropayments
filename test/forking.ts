@@ -36,30 +36,31 @@ describe("debug settleChannel", function () {
     const paymentChannel = await paymentChannelFactory.attach(paymentChannelAddress)
 
     const signingKeyMessage = {
-      "id": 9,
+      "id": 18,
       "token": "0x99109f7aed252eb4bf42c857ad57d3f056d1f692",
-      "signingKeyAddress": "0xEc7d8A1C3F11EeAfFf0ACC3d5a68AAe6e8ccD3B1",
+      "signingKeyAddress": "0x3dd2551C297ED26524Adc628463c465A7929f0eB",
       "recipient": "0x0c6f066cd27a055e13dc3e476e429733641e4dcf",
       "permitMsg": {
         "owner": "0xb8F80C130fA10491C0f06D7b4eE1d87093940640",
         "spender": "0x3afa5f5c6577a85be70a73b60eb08aea903ebc8b",
         "value": "10000000000000000",
-        "nonce": 0,
+        "nonce": "1",
         "deadline": "115792089237316195423570985008687907853269984665640564039457584007913129639935",
-        "v": 27,
-        "r": "0x8ae409378c84856d2a856ce5dba49bba97a33dc23e6bce31b5a8ad6e1988c99f",
-        "s": "0x6ca47d13b87586d29435ce4e37ee5e40f3190e962c8e5d7c893360004616b33e"
+        "v": 28,
+        "r": "0x2b1df6550f252c4f356c84498762f9758c3ac1d7b7899e7b0ace6545e10a1642",
+        "s": "0x60c64250ba1fc5016aabca8cfc43b4573b7334a5aabdd9bc0447785c4a9a5c80"
       },
-      "v": 27,
-      "r": "0x7c1ffe079e7e643ce847be5227efd5d3a623c6f286910813d8633d030bfb2713",
-      "s": "0x59757880d80e0d4ba23112331b85265f87294421f6095733eda505eaca1ffd0c"
-    }
-    const micropaymentMessage = {
-      "id": 9,
-      "amount": 1,
       "v": 28,
-      "r": "0xafb10713122cccd6d82dc8f90bfbc69fd03a69fa981bb7edca7c4d080a451df1",
-      "s": "0x4b39e1e67250f31f737f99c8709719780a91796f6e7f8227374b2734bbd47255"
+      "r": "0xf3bf59397db417df2845232486a04dddbda0edb5c5d6daa071a793beb83374a0",
+      "s": "0x4c3193d692c9dc0e7000a5855b583796576c0ba9132c14d9ba21a9aa233e3975"
+    }
+    
+    const micropaymentMessage = {
+      "id": 18,
+      "amount": 2,
+      "v": 28,
+      "r": "0xd4dfd81968dc15dbe5dacdc7c47a276cf2d905685615d781e3c2aef4dee14991",
+      "s": "0x2f8e030a51857b24f7cf0a4b08f9e98f2683f16b414059d2654184fd2e6c212e"
     }
     await paymentChannel.connect(impersonatedSigner).settleChannel(
       signingKeyMessage,
