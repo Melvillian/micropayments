@@ -66,7 +66,7 @@ const Home: NextPage = () => {
   };
 
   const permitSignatureSuccess = async (data: string) => {
-    console.log("success");
+    console.log("permit signature success");
     console.log(data);
     const { v, r, s } = ethers.utils.splitSignature(data);
     console.log({ v, r, s });
@@ -117,7 +117,7 @@ const Home: NextPage = () => {
     console.log("success signingKeySuccess");
     console.log(data);
     const { v, r, s } = ethers.utils.splitSignature(data);
-    console.log({ v, r, s });
+    console.log(`signing key message sig: {${v}, ${r}, ${s}}`);
     setSKMTuple({ v, r, s });
 
     const endpoint = `/api/paymentChannel/chat/${unsignedPermitPayload.paymentChannelId}`;
@@ -287,7 +287,7 @@ const Home: NextPage = () => {
 
     const response = await fetch(endpoint, options);
     const result = await response.json();
-    console.log(JSON.stringify(result));
+    console.log(`/api/paymentChannel resp: ${JSON.stringify(result)}`);
     setUnsignedPermitPayload(result);
   };
 

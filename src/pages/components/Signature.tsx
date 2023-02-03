@@ -24,40 +24,6 @@ export default function Signature(props: any) {
     }
   }, [isSuccess]);
 
-  const sendSignature = async () => {
-    const from = props.address;
-    const name = props.name;
-    const types = props.types;
-    const value = props.value;
-    const domain = props.domain;
-    const chain = props.chain;
-    const primaryType = props.primaryType;
-
-    const endpoint = "/api/signature";
-    const options = {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        from,
-        name,
-        types,
-        value,
-        domain,
-        chain,
-        primaryType,
-        data, // signature
-      }),
-    };
-
-    const response = await fetch(endpoint, options);
-    const result = await response.json();
-    alert(`Your signature: ${JSON.stringify(result)}`);
-
-    props.success(data);
-  };
-
   return (
     <div className="flex flex-col">
       {/* <div className="underline">Signature Details</div>
