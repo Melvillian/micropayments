@@ -29,7 +29,7 @@ model PaymentChannel2 {
   id                     Int     @id @default(autoincrement())
   owner                  String // wallet address
   spender                String // same thing as payment channel contract 
-  amount                 Int     @default(0) // amount of tokens used: 1, 2, 3, 4...
+  amount                 Int     @default(1) // amount of tokens used: 1, 2, 3, 4...
   value                  BigInt
   nonce                  BigInt
   deadline               String

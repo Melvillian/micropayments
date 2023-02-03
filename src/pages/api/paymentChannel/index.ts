@@ -2,15 +2,11 @@ import { BigNumber } from "ethers";
 import { NextApiRequest, NextApiResponse } from "next";
 import { prisma } from "../../../../utils/prisma";
 
-// TODO: Replace with real receipient address
-const RECIPIENT_ADDRESS = "0x0000000000000000000000000000000000000000";
+const RECIPIENT_ADDRESS = process.env.RECIPIENT_ADDRESS;
 
 const createPermitPayload = (from: string): any => {
-  // TODO: Replace with real contract address
-  const erc20Contract = "0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC";
-
-  // TODO: Replace with real contract address
-  const paymentChannelContract = "0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC";
+  const erc20Contract = process.env.USDC_ADDRESS;
+  const paymentChannelContract = process.env.NEXT_PUBLIC_PAYMENT_CHANNEL_ADDRESS
 
   const domain = {
     name: "USDC",

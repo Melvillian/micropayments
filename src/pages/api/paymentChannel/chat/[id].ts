@@ -29,6 +29,7 @@ export default async function handler(
   if (req.method === "POST") {
     const { id } = req.query;
     const prompt = req.body.prompt;
+    const signedMicropaymentMessage = req.body.signedMicropaymentMessage;
 
     if (!prompt) {
       res.status(400).json({ error: "Missing data" });
@@ -51,7 +52,32 @@ export default async function handler(
       return;
     }
 
-    const result = await getGPTCompletion(prompt);
+    // TODO: make this into it's own endpoint so
+    // we have a clean separation between gpt response requests
+    // and micropayment message update requests
+    await prisma.paymentChannel2.update({
+      where: {
+        id: Number(id),
+      },
+      data: {
+        microPaymentMessageV: signedMicropaymentMessage.v,
+        microPaymentMessageR: signedMicropaymentMessage.r,
+        microPaymentMessageS: signedMicropaymentMessage.s,
+        amount: paymentChannel.amount + 1,
+      }
+    })
+
+    const gptPayload = await getGPTCompletion(prompt);
+    const unsignedPaymentMessage = {
+      id: paymentChannel.id,
+      amount: paymentChannel.amount + 1,
+    }
+
+
+    const result = {
+      gptPayload,
+      unsignedPaymentMessage
+    }
 
     res.status(200).json({
       result,

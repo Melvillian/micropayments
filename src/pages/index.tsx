@@ -1,5 +1,5 @@
 import { ConnectButton } from "@rainbow-me/rainbowkit";
-import { ethers } from "ethers";
+import { BigNumber, ethers, Signer } from "ethers";
 import { NextPage } from "next";
 import { useEffect, useState } from "react";
 import { useAccount } from "wagmi";
@@ -11,12 +11,17 @@ const Home: NextPage = () => {
   const [account, setAccount] = useState("");
   // const [account, setAccount] = useState("");
   const [signingKeyAddress, setsigningKeyAddress] = useState("");
+  const [signingKeySigner, setSigningKeySigner] = useState<Signer | null>(null)
+
   const [permitTuple, setPermitTuple] = useState<any>(null);
   const [unsignedPermitPayload, setUnsignedPermitPayload] = useState<any>(null);
 
   // SKM = SigningKeyMessage
   const [skmTuple, setSKMTuple] = useState<any>(null);
   const [unsignedSKMPayload, setUnsignedSKMPayload] = useState<any>(null);
+
+  // micropayment message
+  const [amount, setAmount] = useState<any>(1);
 
   const [promptHistory, setPromptHistory] = useState<string[]>([]);
   const [responseHistory, setResponseHistory] = useState<string[]>([]);
@@ -28,6 +33,7 @@ const Home: NextPage = () => {
       setAccount(address);
       const signer = ethers.Wallet.createRandom();
       setsigningKeyAddress(signer.address);
+      setSigningKeySigner(signer);
     }
   }, [isConnected]);
 
@@ -120,6 +126,8 @@ const Home: NextPage = () => {
     console.log(`signing key message sig: {${v}, ${r}, ${s}}`);
     setSKMTuple({ v, r, s });
 
+    const signedMicropaymentMessage = await signMicropaymentMessage(amount, unsignedPermitPayload.paymentChannelId);
+
     const endpoint = `/api/paymentChannel/chat/${unsignedPermitPayload.paymentChannelId}`;
     const options = {
       method: "POST",
@@ -128,6 +136,7 @@ const Home: NextPage = () => {
       },
       body: JSON.stringify({
         prompt: promptHistory[0],
+        signedMicropaymentMessage,
       }),
     };
 
@@ -138,7 +147,8 @@ const Home: NextPage = () => {
     }
 
     const result = await response.json();
-    setResponseHistory([result.result]);
+    setResponseHistory([result.result.gptPayload]);
+    setAmount(result.result.unsignedPaymentMessage.amount);
     setLoading(false);
   };
 
@@ -159,9 +169,36 @@ const Home: NextPage = () => {
     );
   };
 
+  const signMicropaymentMessage = async (id: number, amount: BigNumber) => {
+    const paymentChannelContract = process.env.NEXT_PUBLIC_PAYMENT_CHANNEL_ADDRESS
+
+    const domain = {
+      name: "PaymentChannel",
+      version: "1",
+      chainId: 11155111,
+      verifyingContract: paymentChannelContract,
+    };
+    const types = {
+      MicropaymentMessage: [
+        { name: "id", type: "uint256" },
+        { name: "amount", type: "uint256" },
+      ],
+    };
+    const values = {
+      id,
+      amount,
+    };
+    const signature = await signingKeySigner?._signTypedData(domain, types, values);
+    return ethers.utils.splitSignature(signature);
+  }
+
   const submitPrompt = async (e: any) => {
     setLoading(true);
     e.preventDefault();
+
+    console.log(`amount here should be 2, and it is: ${amount}}`)
+    const signedMicropaymentMessage = await signMicropaymentMessage(amount, unsignedPermitPayload.paymentChannelId);
+
     const endpoint = `/api/paymentChannel/chat/${unsignedPermitPayload.paymentChannelId}`;
     const options = {
       method: "POST",
@@ -170,6 +207,7 @@ const Home: NextPage = () => {
       },
       body: JSON.stringify({
         prompt: e.target.prompt.value,
+        signedMicropaymentMessage,
       }),
     };
 
@@ -178,12 +216,12 @@ const Home: NextPage = () => {
     setPromptHistory(promptHistoryCopy);
 
     let gptResponse = "error";
-
     const response = await fetch(endpoint, options);
 
     if (response.status === 200) {
       const result = await response.json();
-      gptResponse = result.result;
+      gptResponse = result.result.gptPayload;
+      setAmount(result.result.unsignedPaymentMessage.amount);
     }
 
     const responseHistoryCopy = [...responseHistory];
