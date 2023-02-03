@@ -11,7 +11,6 @@ const Home: NextPage = () => {
   const [openTab, setOpenTab] = useState(1);
 
   const [account, setAccount] = useState("");
-  // const [account, setAccount] = useState("");
   const [signingKeyAddress, setsigningKeyAddress] = useState("");
   const [signingKeySigner, setSigningKeySigner] = useState<Signer | null>(null);
 
@@ -34,6 +33,7 @@ const Home: NextPage = () => {
   useEffect(() => {
     if (isConnected && address) {
       setAccount(address);
+      console.log("account: ", address);
       const signer = ethers.Wallet.createRandom();
       setsigningKeyAddress(signer.address);
       setSigningKeySigner(signer);
@@ -279,6 +279,8 @@ const Home: NextPage = () => {
     );
   };
 
+  // call paymentChannel.settleChannel() so that the service provider
+  // can be paid
   const closeChannelOnClick = async () => {
     const signer = await fetchSigner();
     const paymentChannelContract = new ethers.Contract(
@@ -287,17 +289,23 @@ const Home: NextPage = () => {
       signer as Signer
     );
 
+    console.log("paymentChannelInfo: ", JSON.stringify({
+      address: process.env.NEXT_PUBLIC_PAYMENT_CHANNEL_ADDRESS!,
+      abi: PaymentChannelABI,
+      signer: signer as Signer,
+    }, null, 2));
+
     const signingKeyMessage = {
       id: unsignedPermitPayload.paymentChannelId,
       token: process.env.NEXT_PUBLIC_USDC_ADDRESS,
       signingKeyAddress,
       recipient: process.env.NEXT_PUBLIC_RECIPIENT_ADDRESS,
       permitMsg: {
-        owner: unsignedPermitPayload.owner,
-        spender: unsignedPermitPayload.spender,
-        value: unsignedPermitPayload.value,
-        nonce: unsignedPermitPayload.nonce,
-        deadline: unsignedPermitPayload.deadline,
+        owner: unsignedPermitPayload.values.owner,
+        spender: unsignedPermitPayload.values.spender,
+        value: unsignedPermitPayload.values.value,
+        nonce: unsignedPermitPayload.values.nonce,
+        deadline: unsignedPermitPayload.values.deadline,
         v: permitTuple.v,
         r: permitTuple.r,
         s: permitTuple.s,
@@ -306,7 +314,7 @@ const Home: NextPage = () => {
       r: skmTuple.r,
       s: skmTuple.s,
     };
-    console.log(`signingKeyMessage: ${JSON.stringify(signingKeyMessage)}`);
+    console.log(`signingKeyMessage: ${JSON.stringify(signingKeyMessage, null, 2)}`);
 
     const micropaymentMessage = {
       id: unsignedPermitPayload.paymentChannelId,
@@ -316,11 +324,18 @@ const Home: NextPage = () => {
       r: mpmTuple.r,
       s: mpmTuple.s,
     };
+    console.log(`micropaymentMessage: ${JSON.stringify(micropaymentMessage, null, 2)}`);
 
-    await paymentChannelContract.settleChannel(
-      
-    )
+    console.log("attempting to settle channel");
+    const txReceipt = await paymentChannelContract.settleChannel(
+        signingKeyMessage,
+        micropaymentMessage
+    );
+    
+    console.log("waiting for settleChannel tx to be mined");
+    await txReceipt.wait();
 
+    console.log("channel closed with id: " + unsignedPermitPayload.paymentChannelId);
   };
   const closeChannel = () => {
     if (!permitTuple || !unsignedSKMPayload || !skmTuple) return "No Channel";
@@ -351,7 +366,6 @@ const Home: NextPage = () => {
             <>{signUnsignedPermitPayloadComponent()}</>
             <>{signSigningKeyMessageComponent()}</>
             <>{chatLoop()}</>
-            {/* <>{closeChannel()}</> */}
           </>
         )}
       </div>
