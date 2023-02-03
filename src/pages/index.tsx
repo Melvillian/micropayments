@@ -107,7 +107,7 @@ const Home: NextPage = () => {
     // fetch nonce from permit
     const signer = await fetchSigner();
     const erc20 = new ethers.Contract(
-      process.env.NEXT_PUBLIC_USDC_ADDRESS!,
+      process.env.NEXT_PUBLIC_ERC20_ADDRESS!,
       ERC20PermitABI,
       signer as Signer
     );
@@ -313,7 +313,7 @@ const Home: NextPage = () => {
     );
 
     const erc20 = new ethers.Contract(
-      process.env.NEXT_PUBLIC_USDC_ADDRESS!,
+      process.env.NEXT_PUBLIC_ERC20_ADDRESS!,
       ERC20PermitABI,
       signer as Signer
     );
@@ -321,7 +321,7 @@ const Home: NextPage = () => {
 
     const signingKeyMessage = {
       id: unsignedPermitPayload.paymentChannelId,
-      token: process.env.NEXT_PUBLIC_USDC_ADDRESS,
+      token: process.env.NEXT_PUBLIC_ERC20_ADDRESS,
       signingKeyAddress,
       recipient: process.env.NEXT_PUBLIC_RECIPIENT_ADDRESS,
       permitMsg: {
@@ -424,7 +424,7 @@ const Home: NextPage = () => {
     // fetch nonce from permit
     const signer = await fetchSigner();
     const erc20 = new ethers.Contract(
-      process.env.NEXT_PUBLIC_USDC_ADDRESS!,
+      process.env.NEXT_PUBLIC_ERC20_ADDRESS!,
       ERC20PermitABI,
       signer as Signer
     );
