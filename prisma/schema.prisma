@@ -30,7 +30,7 @@ model PaymentChannel2 {
   owner                  String // wallet address
   spender                String // same thing as payment channel contract 
   amount                 Int     @default(1) // amount of tokens used: 1, 2, 3, 4...
-  value                  BigInt
+  value                  String
   nonce                  BigInt
   deadline               String
   token                  String // erc 20 token address/ verifying contract 

@@ -26,7 +26,7 @@ const createPermitPayload = (from: string): any => {
   const values = {
     owner: from,
     spender: paymentChannelContract,
-    value: 0.01 * 10 ** 18, // PermitERC20 0.01 TEST
+    value: BigNumber.from(10).pow(16).toBigInt().toString(), // PermitERC20 0.01 TEST
     nonce: 0,
     deadline: BigNumber.from(2).pow(256).sub(1).toBigInt().toString(),
   };

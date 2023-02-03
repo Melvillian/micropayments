@@ -5,10 +5,10 @@ import { prisma } from "../../../../../utils/prisma";
 
 const createSigningMessagePayload = (paymentChannel: PaymentChannel2): any => {
   // TODO: Replace with real contract address
-  const erc20Contract = "0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC";
+  const erc20Contract = process.env.NEXT_PUBLIC_USDC_ADDRESS;
 
   // TODO: Replace with real contract address
-  const paymentChannelContract = "0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC";
+  const paymentChannelContract = process.env.NEXT_PUBLIC_PAYMENT_CHANNEL_ADDRESS;
 
   const domain = {
     name: "PaymentChannel",

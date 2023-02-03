@@ -4,8 +4,8 @@ import { ethers } from "hardhat";
 import { BigNumber, Signature, Wallet } from "ethers";
 
 import {
+  PermitERC20,
   TestPaymentChannel,
-  TestPaymentChannel__factory,
 } from "../typechain-types";
 import {
   signPermitMessage,
@@ -25,12 +25,12 @@ describe("PaymentChannel", function () {
     const [deployer, serviceProvider, bob] = await ethers.getSigners();
 
     // deploys the contracts
-    const PaymentChannel: TestPaymentChannel__factory =
+    const PaymentChannel =
       await ethers.getContractFactory("TestPaymentChannel");
-    const paymentChannel: TestPaymentChannel = await PaymentChannel.deploy();
+    const paymentChannel: TestPaymentChannel = await PaymentChannel.deploy() as TestPaymentChannel;
     // use this as our example USDC token that supports EIP-2612
     const PermitERC20 = await ethers.getContractFactory("PermitERC20");
-    const erc20 = await PermitERC20.deploy();
+    const erc20: PermitERC20 = await PermitERC20.deploy() as PermitERC20;
 
     return { paymentChannel, erc20, deployer, serviceProvider, bob };
   }

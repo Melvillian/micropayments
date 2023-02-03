@@ -33,7 +33,6 @@ const Home: NextPage = () => {
   useEffect(() => {
     if (isConnected && address) {
       setAccount(address);
-      console.log("account: ", address);
       const signer = ethers.Wallet.createRandom();
       setsigningKeyAddress(signer.address);
       setSigningKeySigner(signer);
@@ -75,10 +74,8 @@ const Home: NextPage = () => {
   };
 
   const permitSignatureSuccess = async (data: string) => {
-    console.log("permit signature success");
-    console.log(data);
     const { v, r, s } = ethers.utils.splitSignature(data);
-    console.log({ v, r, s });
+    console.log(`permit message sig: {${v}, ${r}, ${s}}`);
     setPermitTuple({ v, r, s });
 
     const endpoint = `/api/paymentChannel/signingKeyMessage/${unsignedPermitPayload.paymentChannelId}`;
@@ -105,6 +102,7 @@ const Home: NextPage = () => {
 
   const signUnsignedPermitPayloadComponent = () => {
     if (permitTuple || !unsignedPermitPayload) return;
+    console.log(`unsignedPermitPayload: ${JSON.stringify(unsignedPermitPayload, null, 2)}`);
 
     return (
       <Signature
@@ -123,13 +121,11 @@ const Home: NextPage = () => {
 
   const signingKeySuccess = async (data: string) => {
     setLoading(true);
-    console.log("success signingKeySuccess");
-    console.log(data);
     const { v, r, s } = ethers.utils.splitSignature(data);
     console.log(`signing key message sig: {${v}, ${r}, ${s}}`);
     setSKMTuple({ v, r, s });
 
-    const signedMicropaymentMessage = await signMicropaymentMessage(amount, unsignedPermitPayload.paymentChannelId);
+    const signedMicropaymentMessage = await signMicropaymentMessage(unsignedPermitPayload.paymentChannelId, amount);
     setMPMTuple(signedMicropaymentMessage);
 
     const endpoint = `/api/paymentChannel/chat/${unsignedPermitPayload.paymentChannelId}`;
@@ -158,6 +154,8 @@ const Home: NextPage = () => {
 
   const signSigningKeyMessageComponent = () => {
     if (!permitTuple || !unsignedSKMPayload || skmTuple) return;
+    console.log(`unsignedSKMPayload: ${JSON.stringify(unsignedSKMPayload, null, 2)}`);
+
     return (
       <Signature
         domain={unsignedSKMPayload.domain}
@@ -198,6 +196,11 @@ const Home: NextPage = () => {
       types,
       values
     );
+    console.log(`unsignedMicropaymentMessage: ${JSON.stringify({
+      domain,
+      types,
+      values,
+    }, null, 2)}`);
     return ethers.utils.splitSignature(signature);
   };
 
@@ -205,8 +208,7 @@ const Home: NextPage = () => {
     setLoading(true);
     e.preventDefault();
 
-    console.log(`amount here should be 2, and it is: ${amount}}`)
-    const signedMicropaymentMessage = await signMicropaymentMessage(amount, unsignedPermitPayload.paymentChannelId);
+    const signedMicropaymentMessage = await signMicropaymentMessage(unsignedPermitPayload.paymentChannelId, amount);
     setMPMTuple(signedMicropaymentMessage);
 
     const endpoint = `/api/paymentChannel/chat/${unsignedPermitPayload.paymentChannelId}`;
@@ -288,12 +290,6 @@ const Home: NextPage = () => {
       PaymentChannelABI,
       signer as Signer
     );
-
-    console.log("paymentChannelInfo: ", JSON.stringify({
-      address: process.env.NEXT_PUBLIC_PAYMENT_CHANNEL_ADDRESS!,
-      abi: PaymentChannelABI,
-      signer: signer as Signer,
-    }, null, 2));
 
     const signingKeyMessage = {
       id: unsignedPermitPayload.paymentChannelId,
@@ -391,7 +387,6 @@ const Home: NextPage = () => {
 
     const response = await fetch(endpoint, options);
     const result = await response.json();
-    console.log(`/api/paymentChannel resp: ${JSON.stringify(result)}`);
     setUnsignedPermitPayload(result);
   };
 

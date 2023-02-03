@@ -142,7 +142,7 @@ contract PaymentChannel is EIP712 {
                 keccak256(
                     abi.encode(
                         PERMIT_TYPEHASH,
-                        skMsg.permitMsg.owner,
+                        skMsg.permitMsg.spender,
                         skMsg.permitMsg.spender,
                         skMsg.permitMsg.value,
                         skMsg.permitMsg.nonce,
