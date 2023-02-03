@@ -368,7 +368,7 @@ const Home: NextPage = () => {
       <div className="pt-4">
         <button
           onClick={closeChannelOnClick}
-          className="border-2 border-black rounded-lg p-2 w-[50%]"
+          className="border-2 border-black rounded-lg p-2 w-[75%]"
           type="submit"
         >
           Close Channel
