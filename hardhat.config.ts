@@ -18,14 +18,14 @@ const config: HardhatUserConfig = {
     },
   },
   networks: {
-    hardhat: {
-      chainId: 11155161,
-      forking: {
-        url: process.env.SEPOLIA_URL || "",
-        blockNumber: 2822389
-      },
-      allowUnlimitedContractSize: true
-    },
+    // hardhat: {
+    //   chainId: 11155161,
+    //   forking: {
+    //     url: process.env.SEPOLIA_URL || "",
+    //     blockNumber: 2822389
+    //   },
+    //   allowUnlimitedContractSize: true
+    // },
     arbitrum: {
       url: `https://arb-mainnet.g.alchemy.com/v2/${process.env.ALCHEMY_ARBITRUM_API_KEY}`,
       accounts:

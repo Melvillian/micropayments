@@ -5,7 +5,7 @@ import { prisma } from "../../../../utils/prisma";
 const RECIPIENT_ADDRESS = process.env.NEXT_PUBLIC_RECIPIENT_ADDRESS;
 
 const createPermitPayload = (from: string): any => {
-  const erc20Contract = process.env.NEXT_PUBLIC_USDC_ADDRESS;
+  const erc20Contract = process.env.NEXT_PUBLIC_ERC20_ADDRESS;
   const paymentChannelContract = process.env.NEXT_PUBLIC_PAYMENT_CHANNEL_ADDRESS
 
   const domain = {
